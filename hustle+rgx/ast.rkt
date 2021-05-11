@@ -14,6 +14,7 @@
 ;;           | (Begin Expr Expr)
 ;;           | (Let Id Expr Expr)
 ;;           | (Var Id)
+;;           | (DFA Sigma States Start Finals Transitions)
 ;; type Id   = Symbol
 ;; type Op0  = 'read-byte
 ;; type Op1  = 'add1 | 'sub1 | 'zero?
@@ -27,6 +28,8 @@
 ;;           | 'string-ref | 'make-string
 ;;           | 'cons
 ;;           | '= | '< | '<= | 'char=? | 'boolean=?
+;;           | 'regex-match? 
+
 (struct Eof    ()           #:prefab)
 (struct Empty  ()           #:prefab)
 (struct Int    (i)          #:prefab)
@@ -41,3 +44,8 @@
 (struct Begin  (e1 e2)      #:prefab)
 (struct Let    (x e1 e2)    #:prefab)
 (struct Var    (x)          #:prefab)
+;; Added for Regex
+(struct DFA    (s r r0 f t) #:prefab) ;; DFA as defined above
+;; (NFA Sigma States Start Final Transitions)
+;; NFA used as intermediary, not actually a part of Expr
+(struct NFA    (s q q0 f t) #:prefab)
