@@ -46,6 +46,3 @@
 (struct Var    (x)          #:prefab)
 ;; Added for Regex
 (struct DFA    (s r r0 f t) #:prefab) ;; DFA as defined above
-;; (NFA Sigma States Start Final Transitions)
-;; NFA used as intermediary, not actually a part of Expr
-(struct NFA    (s q q0 f t) #:prefab)

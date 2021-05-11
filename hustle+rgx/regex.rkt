@@ -7,35 +7,43 @@
 
 ;; Add to this as needed hehe :)
 
+;; DFA defined in ast.rkt
+;; (NFA Sigma States Start Final Transitions)
+(struct NFA          (s q q0 f t) #:prefab)
+
 ;; type Regex = (Empty_String)
 ;;            | (Reg_Char Character)
 ;;            | (Union Regex Regex)
 ;;            | (Concat Regex Regex)
 ;;            | (Star Regex)
+;;            | (Wild)
+;;            | (Question Regex)
 
-(struct Empty_String ()    #:prefab)
-(struct Reg_Char (c)       #:prefab)
-(struct Union (rxp1 rxp2)  #:prefab)
-(struct Concat (rxp1 rxp2) #:prefab)
-(struct Star (rxp)         #:prefab)
-(struct Wild ()            #:prefab)
+(struct Empty_String ()           #:prefab)
+(struct Reg_Char     (c)          #:prefab)
+(struct Union        (rxp1 rxp2)  #:prefab)
+(struct Concat       (rxp1 rxp2)  #:prefab)
+(struct Star         (rxp)        #:prefab)
+(struct Wild         ()           #:prefab)
+(struct Question     (rxp)        #:prefab)
 
 ;; type Token = (Tok_Char Character)
 ;;            | (Tok_Epsilon)
 ;;            | (Tok_Union)
 ;;            | (Tok_Star)
-;;            | (Tok_Wild)|
+;;            | (Tok_Wild)
 ;;            | (Tok_LParen)
 ;;            | (Tok_RParen)
 ;;            | (Tok_END)
 
-(struct Tok_Char (c)      #:prefab)
-(struct Tok_Union ()      #:prefab)
-(struct Tok_Star ()       #:prefab)
-(struct Tok_Wild ()       #:prefab)
-(struct Tok_LParen ()     #:prefab)
-(struct Tok_RParen ()     #:prefab)
-(struct Tok_END ()        #:prefab)
+(struct Tok_Char     (c)          #:prefab)
+(struct Tok_Union    ()           #:prefab)
+(struct Tok_Star     ()           #:prefab)
+(struct Tok_Wild     ()           #:prefab)
+(struct Tok_Question ()           #:prefab)
+(struct Tok_LParen   ()           #:prefab)
+(struct Tok_RParen   ()           #:prefab)
+(struct Tok_END      ()           #:prefab)
 
 ;; Basic pattern for tokenizing
 (define (tokenize str)
@@ -46,9 +54,10 @@
           (let ((c (substring s pos (add1 pos))))
             (cond
               [(regexp-match? re_var c)   (cons (Tok_Char (string-ref s pos)) (tok (add1 pos) s))]
-              [(string=? c "|")           (cons (Tok_Union)  (tok (add1 pos) s))]
-              [(string=? c "*")           (cons (Tok_Star)   (tok (add1 pos) s))]
-              [(string=? c ".")           (cons (Tok_Wild)   (tok (add1 pos) s))]
+              [(string=? c "|")           (cons (Tok_Union) (tok (add1 pos) s))]
+              [(string=? c "*")           (cons (Tok_Star) (tok (add1 pos) s))]
+              [(string=? c ".")           (cons (Tok_Wild) (tok (add1 pos) s))]
+              [(string=? c "?")           (cons (Tok_Question) (tok (add1 pos) s))]
               [(string=? c "(")           (cons (Tok_LParen) (tok (add1 pos) s))]
               [(string=? c ")")           (cons (Tok_RParen) (tok (add1 pos) s))]
               [(error "Tokenize error")]
@@ -57,7 +66,7 @@
 
 ;;   S -> A Tok_Union S | A
 ;;   A -> B A | B
-;;   B -> C Tok_Star | C
+;;   B -> C Tok_Star | C Tok_Question | C
 ;;   C -> Tok_Char | Tok_Wild | Tok_LParen S Tok_RParen
 ;;   FIRST(S) = Tok_Char | Tok_Wild | Tok_LParen
 ;;   FIRST(A) = Tok_Char | Tok_Wild | Tok_LParen
@@ -98,6 +107,7 @@
                  ((t n)   (lookahead l1)))
       (match t
         [(Tok_Star) (values (Star a1) n)]
+        [(Tok_Question) (values (Question a1) n)]
         [_  (values a1 l1)])))
   (define (parse_C l)
     (let-values (((t n)   (lookahead l)))
