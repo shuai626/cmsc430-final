@@ -47,7 +47,7 @@
 
 ;; Basic pattern for tokenizing
 (define (tokenize str)
-  (let ((re_var (regexp "[a-z]")))
+  (let ((re_var (regexp "[A-Za-z0-9]")))
     (define (tok pos s)
       (if (>= pos (string-length s))
           (list (Tok_END)) ;; end of string
