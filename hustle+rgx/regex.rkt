@@ -130,3 +130,77 @@
   (if (string=? str "")
       (Empty_String)
       (parse-regexp (tokenize str))))
+
+(define (regexp-to-nfa regexp) 
+  (match regexp 
+    [(Empty_String)         
+      (let ((x (gensym))) 
+        (NFA '() (list x) x (list x) '())) ]
+    [(Reg_Char c)             
+      (let ((s0 (gensym)) (s1 (gensym))) 
+        (NFA (list c) (list s0 s1) s0 (list s1) (list (list s0 c s1))))]
+    [(Union rxp1 rxp2)      
+      (let ((A (regexp-to-nfa rxp1))
+            (B (regexp-to-nfa rxp2))
+            (s0 (gensym)) 
+            (s1 (gensym)))
+        (match A
+          [(NFA asigma astates astart aaccepts adelta) 
+            (match B
+              [(NFA bsigma bstates bstart baccepts bdelta) 
+                  (NFA (union asigma bsigma)
+                        (union (list s0 s1) (union astates bstates))
+                        s0
+                        (list s1)
+                        (union adelta (union bdelta (union (list (list s0 null astart) (list s0 null bstart))  (union (unwind-states aaccepts s1) (unwind-states baccepts s1)))))
+                        )])]))]
+    [(Concat rxp1 rxp2)     
+      (let ((A (regexp-to-nfa rxp1))
+            (B (regexp-to-nfa rxp2)))
+        (match A
+          [(NFA asigma astates astart aaccepts adelta) 
+            (match B
+              [(NFA bsigma bstates bstart baccepts bdelta) 
+                  (NFA (union asigma bsigma)
+                        (union astates bstates)
+                        astart
+                        baccepts
+                        (union adelta (union bdelta (unwind-states aaccepts bstart)))
+                        )])]))]
+    [(Star rxp)             
+      (let ((A (regexp-to-nfa rxp))
+            (s0 (gensym)) 
+            (s1 (gensym)))
+          (match A
+            [(NFA asigma astates astart aaccepts adelta) 
+                    (NFA asigma
+                          (union astates (list s0 s1))
+                          s0
+                          (list s1)
+                          (union adelta (union (list (list s0 null astart) (list s0 null s1) (list s1 null s0)) (unwind-states aaccepts s1)))
+                          )]))]
+    [(Wild)                 
+      (let ((s0 (gensym)) (s1 (gensym))) 
+        (NFA '() (list s0 s1) s0 (list s1) (list (list s0 (Wild) s1))))]
+    [(Question rxp)         
+      (let ((A (regexp-to-nfa rxp))
+      (s0 (gensym)) 
+      (s1 (gensym)))
+          (match A
+            [(NFA asigma astates astart aaccepts adelta) 
+                    (NFA asigma
+                          (union astates (list s0 s1))
+                          s0
+                          (list s1)
+                          (union adelta (union (list (list s0 null astart) (list s0 null s1)) (unwind-states aaccepts s1)))
+                          )]))]
+    ))
+
+(define (union list1 list2)
+  (remove-duplicates (append list1 list2))
+)
+
+
+(define (unwind-states start_states end_state)
+  (foldl (lambda (v l) (cons (list v null end_state) l)) '() start_states)
+)
