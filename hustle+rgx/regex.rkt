@@ -131,6 +131,14 @@
       (Empty_String)
       (parse-regexp (tokenize str))))
 
+(define (union list1 list2)
+  (remove-duplicates (append list1 list2))
+)
+
+(define (unwind-states start_states end_state)
+  (foldl (lambda (v l) (cons (list v null end_state) l)) '() start_states)
+)
+
 (define (regexp-to-nfa regexp) 
   (match regexp 
     [(Empty_String)         
@@ -196,11 +204,36 @@
                           )]))]
     ))
 
-(define (union list1 list2)
-  (remove-duplicates (append list1 list2))
+; TODO implement move
+(define (move nfa qs v)
+
 )
 
+;TODO implement e-closure
+(define (e-closure nfa qs)
 
-(define (unwind-states start_states end_state)
-  (foldl (lambda (v l) (cons (list v null end_state) l)) '() start_states)
+)
+
+;TODO implement nfa-to-dfa-step
+(define (nfa-to-dfa-step nfa dfa work)
+  (match dfa 
+    [(DFA sigma states start accepts delta)
+      (match work
+      ['() dfa]
+      [(cons h t)
+        
+        (let ((new_dfa (DFA ;TODO add new-states, new-trans, and new-finals
+        
+        )))
+          ;nfa_to_dfa_step nfa new_dfa (Sets.remove h (List.fold_left (fun acc state -> if Sets.elem state states then acc else state::acc) work (new_states nfa h)))
+          )])
+    ])
+)
+
+(define (nfa-to-dfa nfa) 
+  (match nfa
+  [[(NFA sigma states start accepts delta) 
+    (let ((dfa (DFA '() sigma '() (e-closure nfa (list start)) '())))
+        nfa-to-dfa-step nfa dfa (list (e-closure nfa (list start)))
+    )])
 )
