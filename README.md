@@ -6,9 +6,9 @@ Reg-exp may also support wildcard, negation, etc.
 
 TODOS:
 - 1) Create a new Prim2 struct (Prim2 'regex-match? DFA string) which stores a DFA struct and a string
-- 2) During parsing, create (Prim2 'regex-match? DFA string) struct. 'regex-match? calls will come in as ('regex-match? <regex string> <input string>).
-   -  a) Check that <regex string> is a valid regular expression
-   -  b) Convert the valid <regex string> into an NFA struct
+- 2) ~~ During parsing, create (Prim2 'regex-match? DFA string) struct. 'regex-match? calls will come in as ('regex-match? <regex string> <input string>).~~
+   -  ~~ a) Check that <regex string> is a valid regular expression ~~
+   -  ~~ b) Convert the valid <regex string> into an NFA struct ~~
    -  c) Convert the NFA struct into DFA struct
    -  d) Store reduction as (Prim2 'regex-match? DFA string)
 - 3) In the compiler:
