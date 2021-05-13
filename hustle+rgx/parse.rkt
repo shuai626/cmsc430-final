@@ -30,7 +30,7 @@
 
 ;; Added function to parse regex-match
 (define (parse-regex-match regex str) 
-  (Prim2 'regex-match (regexp-to-nfa (string-to-regexp regex)) (String str))
+  (Prim2 'regex-match (nfa-to-dfa (regexp-to-nfa (string-to-regexp regex))) (String str))
 )
 
 (define op0

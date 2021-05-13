@@ -38,7 +38,13 @@
     [(Prim2 p e1 e2)    (compile-prim2 p e1 e2 c)]
     [(If e1 e2 e3)      (compile-if e1 e2 e3 c)]
     [(Begin e1 e2)      (compile-begin e1 e2 c)]
-    [(Let x e1 e2)      (compile-let x e1 e2 c)]))
+    [(Let x e1 e2)      (compile-let x e1 e2 c)]
+    [(DFA _ _ _ _ _)    (compile-dfa e)]))
+
+;; TODO compile DFA, return effective address of start state label in rax for use in Prim2 compiling
+(define (compile-dfa dfa)
+
+)
 
 ;; DONE: Compile string
 (define (compile-string s)
@@ -232,6 +238,10 @@
                     (Sub r8 1)
                     (Jmp l1)
                     (Label l2)))]
+          ['regex-match
+            ;; grab effective address from compiled regex
+            ;; maybe add a mask to verify? although it should be guarenteed dfa from parsing
+          ]
          )))
 
 ;; Imm -> Asm

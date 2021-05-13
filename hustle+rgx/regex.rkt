@@ -132,12 +132,10 @@
       (parse-regexp (tokenize str))))
 
 (define (union list1 list2)
-  (remove-duplicates (append list1 list2))
-)
+  (remove-duplicates (append list1 list2)))
 
 (define (unwind-states start_states end_state)
-  (foldl (lambda (v l) (cons (list v null end_state) l)) '() start_states)
-)
+  (foldl (lambda (v l) (cons (list v null end_state) l)) '() start_states))
 
 (define (regexp-to-nfa regexp) 
   (match regexp 
@@ -189,7 +187,7 @@
                           )]))]
     [(Wild)                 
       (let ((s0 (gensym)) (s1 (gensym))) 
-        (NFA '() (list s0 s1) s0 (list s1) (list (list s0 (Wild) s1))))]
+        (NFA (list (Wild)) (list s0 s1) s0 (list s1) (list (list s0 (Wild) s1))))]
     [(Question rxp)         
       (let ((A (regexp-to-nfa rxp))
       (s0 (gensym)) 
@@ -201,39 +199,69 @@
                           s0
                           (list s1)
                           (union adelta (union (list (list s0 null astart) (list s0 null s1)) (unwind-states aaccepts s1)))
-                          )]))]
-    ))
+                          )]))]))
 
-; TODO implement move
+(define (eq-trans? t v)
+  (match* (t v)
+    [((Wild) (Wild)) #t] ;; special case bc struct as transition
+    [(_ _) (eq? t v)]))
+
 (define (move nfa qs v)
+  (define (reach state delta)
+    (define (from trans)
+      (match trans
+        [(list start t dest)
+         #:when (and (eq? start state) (eq-trans? t v))
+         (list dest)]
+        [_ '()]))
+    (foldl (lambda (trans l) (union l (from trans))) '() delta))
+  (match nfa
+    [(NFA _ _ _ _ delta)
+     (foldl (lambda (state l) (union l (reach state delta))) '() qs)]))
 
-)
-
-;TODO implement e-closure
 (define (e-closure nfa qs)
+  (define (helper r rprime)
+    (if (set=? (set r) (set rprime))
+        rprime
+        (helper rprime (union rprime (move nfa rprime null)))))
+  (helper '() qs))
 
-)
+(define (new-states nfa qs)
+  (match nfa
+    [(NFA sigma _ _ _ _)
+     (foldl (lambda (v l) (append l (list (e-closure nfa (move nfa qs v))))) '() sigma)]))
 
-;TODO implement nfa-to-dfa-step
+(define (new-trans nfa qs)
+  (match nfa
+    [(NFA sigma _ _ _ _)
+     (map (lambda (v dest) (list qs v dest)) sigma (new-states nfa qs))]))
+
+(define (new-finals nfa qs)
+  (match nfa
+    [(NFA _ _ _ accepts _)
+     (if (null? (set-intersect accepts qs))
+         '()
+         (list qs))]))
+ 
 (define (nfa-to-dfa-step nfa dfa work)
   (match dfa 
     [(DFA sigma states start accepts delta)
       (match work
-      ['() dfa]
-      [(cons h t)
-        
-        (let ((new_dfa (DFA ;TODO add new-states, new-trans, and new-finals
-        
-        )))
-          ;nfa_to_dfa_step nfa new_dfa (Sets.remove h (List.fold_left (fun acc state -> if Sets.elem state states then acc else state::acc) work (new_states nfa h)))
-          )])
-    ])
-)
+        ['() dfa]
+        [(cons h t)
+          (let* ((new_states (remove* (list '()) (new-states nfa h)))
+                (new_trans
+                  (foldl (lambda (trans l)
+                          (match trans
+                            [(list start v dest)
+                            (if (eq? dest '()) l (cons trans l))])) '() (new-trans nfa h)))
+                (new_finals (new-finals nfa h))
+                (new_dfa (DFA sigma (union states new_states) start (union accepts new_finals) (union delta new_trans))))
+          (nfa-to-dfa-step nfa new_dfa (union t (remove* states new_states))))])]))
 
 (define (nfa-to-dfa nfa) 
   (match nfa
-  [[(NFA sigma states start accepts delta) 
-    (let ((dfa (DFA '() sigma '() (e-closure nfa (list start)) '())))
-        nfa-to-dfa-step nfa dfa (list (e-closure nfa (list start)))
-    )])
-)
+    [(NFA sigma states start accepts delta) 
+     (let* ((new_start (e-closure nfa (list start)))
+            (dfa (DFA sigma (list new_start) new_start '() '())))
+        (nfa-to-dfa-step nfa dfa (list new_start)))]))
