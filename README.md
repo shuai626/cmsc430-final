@@ -15,3 +15,10 @@ TODOS:
    -  a) Create a mapping of states to gensym labels
    -  b) For each state/transition in the DFA struct, create Jumps to other states. State+transitions not in the DFA struct should default to the starting state
    -  c) If we reach the end of the string, and we're at a final state, then return True. Else return False
+
+
+STRETCH
+- Add substring matching
+- Add support for quantifiers
+- Add support for ^ and $
+- Add support to return first substring matched
