@@ -20,5 +20,7 @@ TODOS:
 STRETCH
 - Add substring matching
 - Add support for quantifiers
-- Add support for ^ and $
+- Add support for anchors: ^ and $
+- Add support for quantifiers: + and {}
+- Add support for character classes: [abc]
 - Add support to return first substring matched
