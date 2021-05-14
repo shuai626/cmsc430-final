@@ -2,6 +2,9 @@
 (provide (all-defined-out))
 (require "ast.rkt" "types.rkt" a86/ast)
 
+;; for testing purposes
+(require "parse.rkt" "regex.rkt")
+
 ;; Registers used
 (define rax 'rax) ; return
 (define rbx 'rbx) ; heap
@@ -21,7 +24,86 @@
         (Label 'entry)
         (Mov rbx rdi) ; recv heap pointer
         (compile-e e '())
-        (Ret)))
+        (Ret)
+        (compile-dfa-defines (get-dfas e))))
+
+
+;; TODO - find all (Prim2 'regex-match _ _) and store in list
+(define (get-dfas e)
+  (seq)
+)
+
+;; TODO - for each (Prim2 'regex-match dfa _ ), compile the dfa
+;; TODO - push prev address onto stack
+(define (compile-dfa-defines dfas)
+  (let ((return-true (gensym))
+        (return-false (gensym)))
+    (seq   (Label return-true)
+          (Mov rax val-true)
+          (Ret)
+          (Label return-false)
+          (Mov rax val-false)
+          (Ret)
+            (match dfas
+              ['() (seq)]
+              [(cons dfa dfas)  
+                (seq (compile-dfa-define dfa return-true return-false)
+                    (compile-dfa-defines dfas))]
+    ))) 
+)
+
+;; TODO compile DFA, return effective address of start state label in rax for use in Prim2 compiling
+;; TODO add string to this somehow
+(define (compile-dfa-define dfa return-true return-false)
+  (match dfa
+  [(DFA sigma states start accepts delta)
+    (let ((s-to-l (states-to-labels states)))
+        
+        (seq
+          ;; if end of string
+          ;; and state is final state, then jump to TRUE
+          ;; else jump to FALSE
+
+          ;; else if not end of string
+          ;; for each state, create jumps to other states given the transitions
+          ;; if wildcard, then jump as long as non-empty string
+          ;; else if char, then jump
+          ;; else, jump to false immediately
+        )
+      )
+  ])
+)
+
+;; helper function that returns all transitions from a specific state
+(define (get-state-transitions state delta)
+  (match delta
+    ['() '()]
+    [(cons (list start_state trans end_state) l)  
+      (if (eq? state start_state) 
+        (cons (list trans end_state) (get-state-transitions state l))
+        (get-state-transitions state l)
+      )]
+  )
+)
+
+;; helper function that maps all states in dfa to a unique gensym label
+(define (states-to-labels states) 
+  (match states
+    ['() '()]
+    [(cons state l)
+      (cons (list state (gensym)) (states-to-labels l))])
+)
+
+;; helper function to look-up label mapped to state
+(define (get-label state states-to-labels)
+  (match states-to-labels
+    [(cons (list s label) l) 
+      (if (eq? s state)
+        label
+        (get-label state l))]
+  )
+)
+
 
 ;; Expr CEnv -> Asm
 (define (compile-e e c)
@@ -41,9 +123,9 @@
     [(Let x e1 e2)      (compile-let x e1 e2 c)]
     [(DFA _ _ _ _ _)    (compile-dfa e)]))
 
-;; TODO compile DFA, return effective address of start state label in rax for use in Prim2 compiling
+;; TODO match DFA to get start-state, then return (Lea rax (get-label start))
 (define (compile-dfa dfa)
-
+  (seq)
 )
 
 ;; DONE: Compile string
@@ -239,8 +321,11 @@
                     (Jmp l1)
                     (Label l2)))]
           ['regex-match
+            ;;TODO - push current address onto stack for (Ret)
+            ;; TODO - push compiled string address onto stack as well
             ;; grab effective address from compiled regex
             ;; maybe add a mask to verify? although it should be guarenteed dfa from parsing
+            (seq)
           ]
          )))
 
