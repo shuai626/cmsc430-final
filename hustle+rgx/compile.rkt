@@ -43,7 +43,7 @@
 (define (compile-dfa-defines dfas)
   (let ((return-true (gensym))
         (return-false (gensym)))
-    (seq   (Label return-true)
+    (seq  (Label return-true)
           (Mov rax val-true)
           (Ret)
           (Label return-false)
@@ -129,8 +129,12 @@
     [(DFA _ _ _ _ _)    (compile-dfa e)]))
 
 ;; TODO match DFA to get start-state, then return (Lea rax (get-label start))
+;; NOTE: this may require making (states-to-labels) a global let defined before everything else in
+;; (compile-e), otherwise compile-dfa can't access the mappings
 (define (compile-dfa dfa)
-  (seq)
+  (match (dfa)
+  [(DFA _ _ start _ _)      
+    (seq)])
 )
 
 ;; DONE: Compile string
