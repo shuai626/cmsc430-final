@@ -12,9 +12,16 @@ TODOS:
    -  <del> c) Convert the NFA struct into DFA struct <del>
    -  <del> d) Store reduction as (Prim2 'regex-match? DFA string) <del>
 - 3) In the compiler:
-   -  a) Create a mapping of states to gensym labels
-   -  b) For each state/transition in the DFA struct, create Jumps to other states. State+transitions not in the DFA struct should default to the starting state
-   -  c) If we reach the end of the string, and we're at a final state, then return True. Else return False
+   - <del>a) At the start of compilation, find all 'regex-match clauses in the program <del>
+   - b) Create a regex tree for each 'regex-match clause (using global labels for return-true and return-false)
+      -  <del> a) Create a mapping of states to gensym labels. Create a function that returns
+      all transitions from a given state. Create a function that returns a label given a state <del>
+      -  b) For each state/transition in the DFA struct, create Jumps to other states. Create special case
+      for (Wild) char
+      -  c) If we reach the end of the string, and we're at a final state, then return True. Else return False
+   - c) compile-dfa loads address of dfa's start-state into rax
+   - d) compiling prim2 clause will store current memory location into memory, push string
+   pointer to memory, then jump to dfa's start-state
 
 
 STRETCH

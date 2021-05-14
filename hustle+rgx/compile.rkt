@@ -28,13 +28,18 @@
         (compile-dfa-defines (get-dfas e))))
 
 
-;; TODO - find all (Prim2 'regex-match _ _) and store in list
+;; helper function finds all dfas in the AST and store in list
 (define (get-dfas e)
-  (seq)
-)
+  (match e
+    [(DFA _ _ _ _ _)    (list e)]
+    [(Prim1 p e)        (get-dfas e)]
+    [(Prim2 p e1 e2)    (append (get-dfas e1) (get-dfas e2))]
+    [(Begin e1 e2)      (append (get-dfas e1) (get-dfas e2))]
+    [(Let x e1 e2)      (append (get-dfas e1) (get-dfas e2))]
+    [(If e1 e2 e3)      (append (get-dfas e1) (get-dfas e2) (get-dfas e3))]
+    [_                  '()]))
 
-;; TODO - for each (Prim2 'regex-match dfa _ ), compile the dfa
-;; TODO - push prev address onto stack
+;; compile each dfa into assembly
 (define (compile-dfa-defines dfas)
   (let ((return-true (gensym))
         (return-false (gensym)))
