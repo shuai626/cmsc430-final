@@ -13,10 +13,14 @@
 (define rsp 'rsp) ; stack
 (define rdi 'rdi) ; arg
 
+(define global-s-to-l '())
+(define regex-return-true (gensym))
+(define regex-return-false (gensym))
 ;; type CEnv = [Listof Variable]
 
 ;; Expr -> Asm
 (define (compile e)
+  (let ((regex-assembly (compile-dfa-defines (get-dfas e))))
   (prog (Extern 'peek_byte)
         (Extern 'read_byte)
         (Extern 'write_byte)
@@ -25,7 +29,14 @@
         (Mov rbx rdi) ; recv heap pointer
         (compile-e e '())
         (Ret)
-        (compile-dfa-defines (get-dfas e))))
+        (Label regex-return-true)
+        (Mov rax val-true)
+        (Ret)
+        (Label regex-return-false)
+        (Mov rax val-false)
+        (Ret)
+        regex-assembly))
+)
 
 
 ;; helper function finds all dfas in the AST and store in list
@@ -41,42 +52,32 @@
 
 ;; compile each dfa into assembly
 (define (compile-dfa-defines dfas)
-  (let ((return-true (gensym))
-        (return-false (gensym)))
-    (seq  (Label return-true)
-          (Mov rax val-true)
-          (Ret)
-          (Label return-false)
-          (Mov rax val-false)
-          (Ret)
-            (match dfas
-              ['() (seq)]
-              [(cons dfa dfas)  
-                (seq (compile-dfa-define dfa return-true return-false)
-                    (compile-dfa-defines dfas))]
-    ))) 
+  (match dfas
+    ['() (seq)]
+    [(cons dfa dfas)  
+      (seq (compile-dfa-define dfa)
+          (compile-dfa-defines dfas))]) 
 )
 
-;; TODO compile DFA, return effective address of start state label in rax for use in Prim2 compiling
 ;; TODO add string to this somehow
-(define (compile-dfa-define dfa return-true return-false)
+(define (compile-dfa-define dfa)
   (match dfa
   [(DFA sigma states start accepts delta)
     (let ((s-to-l (states-to-labels states)))
-        
-        (seq
-          ;; if end of string
-          ;; and state is final state, then jump to TRUE
-          ;; else jump to FALSE
+        (begin (set! global-s-to-l (append global-s-to-l s-to-l))
+          (seq
+            ;; if end of string
+            ;; and state is final state, then jump to TRUE
+            ;; else jump to FALSE
 
-          ;; else if not end of string
-          ;; for each state, create jumps to other states given the transitions
-          ;; if wildcard, then jump as long as non-empty string
-          ;; else if char, then jump
-          ;; else, jump to false immediately
+            ;; else if not end of string
+            ;; for each state, create jumps to other states given the transitions
+            ;; if wildcard, then jump as long as non-empty string
+            ;; else if char, then jump
+            ;; else, jump to false immediately
+          )
         )
-      )
-  ])
+      )])
 )
 
 ;; helper function that returns all transitions from a specific state
@@ -109,7 +110,6 @@
   )
 )
 
-
 ;; Expr CEnv -> Asm
 (define (compile-e e c)
   (match e
@@ -128,13 +128,11 @@
     [(Let x e1 e2)      (compile-let x e1 e2 c)]
     [(DFA _ _ _ _ _)    (compile-dfa e)]))
 
-;; TODO match DFA to get start-state, then return (Lea rax (get-label start))
-;; NOTE: this may require making (states-to-labels) a global let defined before everything else in
-;; (compile-e), otherwise compile-dfa can't access the mappings
+;; returns effective address of the starting state of dfa
 (define (compile-dfa dfa)
-  (match (dfa)
+  (match dfa
   [(DFA _ _ start _ _)      
-    (seq)])
+    (seq (Lea rax (get-label start global-s-to-l)))])
 )
 
 ;; DONE: Compile string
@@ -443,3 +441,4 @@
        (Cmp rax (imm->bits 255))
        (Jg 'raise_error)))
        
+
