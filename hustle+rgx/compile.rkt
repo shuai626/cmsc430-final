@@ -64,26 +64,26 @@
   [(DFA sigma states start accepts delta)
     (let ((s-to-l (states-to-labels states)))
         (begin (set! global-s-to-l (append global-s-to-l s-to-l))
-          (compile-dfa-states states start accepts delta s-to-l)
+          (compile-dfa-states states start accepts delta)
         )
       )])
 )
 
-(define (compile-dfa-states states start accepts delta s-to-l)
+(define (compile-dfa-states states start accepts delta)
   (match states
     ['()          (seq)]
     [(cons state l)   
-      (seq (compile-dfa-state state start accepts delta s-to-l)
-           (compile-dfa-states l start accepts delta s-to-l))]
+      (seq (compile-dfa-state state start accepts delta)
+           (compile-dfa-states l start accepts delta))]
   )
 )
 
 ;; TODO compile the states
 ;; TODO add number to stack that stores where we are in string?
 ;; TODO get string off the stack as well
-(define (compile-dfa-state state start accepts delta s-to-l)
+(define (compile-dfa-state state start accepts delta)
   (seq
-              (Label (get-label state s-to-l))
+              (Label (get-label state global-s-to-l))
               ;;if start state, then pop string off stack
 
               ;; use code similar to make-ref to load curr char 
@@ -351,8 +351,12 @@
                     (Jmp l1)
                     (Label l2)))]
           ['regex-match
+            ;; TODO - make sure stack is 16-byte aligned for function call 
+            ;; https://www.cs.umd.edu/class/spring2021/cmsc430/Iniquity.html
+
             ;;TODO - push current address onto stack for (Ret)
             ;; TODO - push compiled string address onto stack as well
+            ;; TODO - push the number 0
             ;; grab effective address from compiled regex
             ;; maybe add a mask to verify? although it should be guarenteed dfa from parsing
             (seq)
