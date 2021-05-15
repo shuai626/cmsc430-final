@@ -85,6 +85,9 @@
   (seq
               (Label (get-label state s-to-l))
               ;;if start state, then pop string off stack
+
+              ;; use code similar to make-ref to load curr char 
+              ;; convert char to bits (imm->bits)
               
               ;; if end of string
               ;; and state is final state, then jump to TRUE
@@ -146,6 +149,8 @@
     [(Let x e1 e2)      (compile-let x e1 e2 c)]
     [(DFA _ _ _ _ _)    (compile-dfa e)]))
 
+
+;; TODO check if mask is needed?
 ;; returns effective address of the starting state of dfa
 (define (compile-dfa dfa)
   (match dfa
