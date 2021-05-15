@@ -59,25 +59,43 @@
           (compile-dfa-defines dfas))]) 
 )
 
-;; TODO add string to this somehow
 (define (compile-dfa-define dfa)
   (match dfa
   [(DFA sigma states start accepts delta)
     (let ((s-to-l (states-to-labels states)))
         (begin (set! global-s-to-l (append global-s-to-l s-to-l))
-          (seq
-            ;; if end of string
-            ;; and state is final state, then jump to TRUE
-            ;; else jump to FALSE
-
-            ;; else if not end of string
-            ;; for each state, create jumps to other states given the transitions
-            ;; if wildcard, then jump as long as non-empty string
-            ;; else if char, then jump
-            ;; else, jump to false immediately
-          )
+          (compile-dfa-states states start accepts delta s-to-l)
         )
       )])
+)
+
+(define (compile-dfa-states states start accepts delta s-to-l)
+  (match states
+    ['()          (seq)]
+    [(cons state l)   
+      (seq (compile-dfa-state state start accepts delta s-to-l)
+           (compile-dfa-states l start accepts delta s-to-l))]
+  )
+)
+
+;; TODO compile the states
+;; TODO add number to stack that stores where we are in string?
+;; TODO get string off the stack as well
+(define (compile-dfa-state state start accepts delta s-to-l)
+  (seq
+              (Label (get-label state s-to-l))
+              ;;if start state, then pop string off stack
+              
+              ;; if end of string
+              ;; and state is final state, then jump to TRUE
+              ;; else jump to FALSE
+
+              ;; else if not end of string
+              ;; for each state, create jumps to other states given the transitions
+              ;; if wildcard, then jump as long as non-empty string
+              ;; else if char, then jump
+              ;; else, jump to false immediately
+  )
 )
 
 ;; helper function that returns all transitions from a specific state
