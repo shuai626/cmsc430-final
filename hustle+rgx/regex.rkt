@@ -203,7 +203,8 @@
 
 (define (eq-trans? t v)
   (match* (t v)
-    [((Wild) (Wild)) #t] ;; special case bc struct as transition
+    [((Wild) x) #:when (not (eq? x null)) #t] ;; special case bc struct as transition
+    ;; When moving from one state to another, also include if state = "WILD"
     [(_ _) (eq? t v)]))
 
 (define (move nfa qs v)
