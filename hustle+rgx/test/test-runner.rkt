@@ -97,12 +97,35 @@
   ;; Hustle+Rgx examples
   (check-equal? (run '(regex-match "" "a")) #f)
   (check-equal? (run '(regex-match "" "")) #t)
+
   (check-equal? (run '(regex-match "." "a")) #t)
   (check-equal? (run '(regex-match "." "b")) #t)
   (check-equal? (run '(regex-match "." "bb")) #f)
+
+  (check-equal? (run '(regex-match "a" "a")) #t)
+  (check-equal? (run '(regex-match "a" "b")) #f)
+
+  (check-equal? (run '(regex-match "a|b" "a")) #t)
+  (check-equal? (run '(regex-match "a|b" "b")) #t)
+  (check-equal? (run '(regex-match "a|b" "c")) #f)
+
+  (check-equal? (run '(regex-match "abcaa" "abcaa")) #t)
+  (check-equal? (run '(regex-match "abcaa" "abca")) #f)
+
+  (check-equal? (run '(regex-match "a*" "a")) #t)
+  (check-equal? (run '(regex-match "a*" "aaaaa")) #t)
+  (check-equal? (run '(regex-match "a*" "aaaaaaaaab")) #f)
+  (check-equal? (run '(regex-match "a*b" "aaaaaaaaab")) #t)
+
+  (check-equal? (run '(regex-match "a?" "")) #t)
+  (check-equal? (run '(regex-match "a?" "a")) #t)
+  (check-equal? (run '(regex-match "a?" "b")) #f)
   
-                
-                
+  (check-equal? (run '(regex-match "(.a|bc)*" "bcbcbcda")) #t)
+  (check-equal? (run '(regex-match "(.ce|bc)" "ace")) #t)
+  (check-equal? (run '(regex-match "(.ce|bc)" "bc")) #t)
+
+  (check-equal? (run '(regex-match "(a|b)*" "abbaaabbababa")) #t)
 )  
 
 (define (test-runner-io run)

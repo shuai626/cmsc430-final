@@ -110,15 +110,25 @@
   )
 )
 
-;; TODO
+;; TODO debug wildcard
 (define (compile-dfa-state-immt-char state-transitions)
   ;; for each state, create jumps to other states given the transitions
   ;; if char, then jump
   ;; convert char to bits (imm->bits)
-  (seq)
+  (match state-transitions
+    ['() (seq)]
+    [(cons (list trans end) l)  
+      (if (not (equal? trans (Wild)))
+        (seq 
+          (Cmp r8 (imm->bits trans))
+          (Je (get-label end))
+          (compile-dfa-state-immt-char l)
+        )
+        (compile-dfa-state-immt-char l)
+      )]
+  )
 )
 
-;; TODO fix bug that causes function to always return regex-return-false
 (define (compile-dfa-state-immt-wild state-transitions)
   ;; if wildcard, then jump as long as non-empty string
   ;; else, jump to false immediately
@@ -391,6 +401,7 @@
                   (Xor rax type-string)
                   ;; push the length of string onto r9
                   (Mov r9 (Offset rax 0))
+                  (Sar r9 4)
                   ;; jump to regex, current address stored on stack using (Call) for (Ret)
                   (Pop r8)
                   (Call r8)
@@ -401,6 +412,7 @@
                   (assert-string rax)
                   (Xor rax type-string)
                   (Mov r9 (Offset rax 0))
+                  (Sar r9 4)
                   (Pop r8)
                   (Call r8)
                   (Add rsp 8)
