@@ -77,25 +77,58 @@
 )
 
 ;; TODO compile the states
-;; TODO add number to stack that stores where we are in string to r9
-;; TODO get string off the stack as well to r8
 (define (compile-dfa-state state start accepts delta)
+  (let ((l1 (gensym))
+        (l2 (gensym)))
   (seq
+              ;; String pointer found in rax
+              ;; str length found in r9
               (Label (get-label state))
-              ;;if start state, then pop string off stack
 
-              ;; use code similar to make-ref to load curr char 
-              ;; convert char to bits (imm->bits)
-              
               ;; if end of string
-              ;; and state is final state, then jump to TRUE
-              ;; else jump to FALSE
-
+              (Cmp r9 0)
+              (Jne l1)
+              (compile-dfa-state-final state accepts)
+              
               ;; else if not end of string
-              ;; for each state, create jumps to other states given the transitions
-              ;; if wildcard, then jump as long as non-empty string
-              ;; else if char, then jump
-              ;; else, jump to false immediately
+              (Label l1)
+              ;; load curr char into r8
+              (Sub r9 1)
+              (Add rax 8)
+              (Mov r8 (Offset rax 0))
+              (compile-dfa-state-immt-char (get-state-transitions state delta))
+              (compile-dfa-state-immt-wild (get-state-transitions state delta))
+  ))
+)
+
+(define (compile-dfa-state-final state accepts)
+  (if (member state accepts) 
+    ;; if the is final state, then jump to TRUE
+    (seq        (Jmp regex-return-true))
+    ;; else jump to FALSE
+    (seq         (Jmp regex-return-false))
+  )
+)
+
+;; TODO
+(define (compile-dfa-state-immt-char state-transitions)
+  ;; for each state, create jumps to other states given the transitions
+  ;; if char, then jump
+  ;; convert char to bits (imm->bits)
+  (seq)
+)
+
+;; TODO fix bug that causes function to always return regex-return-false
+(define (compile-dfa-state-immt-wild state-transitions)
+  ;; if wildcard, then jump as long as non-empty string
+  ;; else, jump to false immediately
+  (match state-transitions
+    ['() (seq (Jmp regex-return-false))]
+    [(cons (list trans end) l) 
+      (if (equal? trans (Wild)) 
+        (seq (Jmp (get-label end)))
+        (compile-dfa-state-immt-wild l)
+      )]
   )
 )
 
@@ -104,7 +137,7 @@
   (match delta
     ['() '()]
     [(cons (list start_state trans end_state) l)  
-      (if (eq? state start_state) 
+      (if (equal? state start_state) 
         (cons (list trans end_state) (get-state-transitions state l))
         (get-state-transitions state l)
       )]
@@ -124,7 +157,7 @@
   (foldl (lambda (v l) 
       (match v
       [(list s label)
-        (if (eq? s state) label l)])) null global-s-to-l))
+        (if (equal? s state) label l)])) null global-s-to-l))
 
 ;; Expr CEnv -> Asm
 (define (compile-e e c)
@@ -147,10 +180,11 @@
 ;; returns effective address of the starting state of dfa
 (define (compile-dfa dfa)
   (match dfa
-  [(DFA _ _ start _ _)      
-    ;(seq (Lea rax (get-label start)))
-    
-    (seq (Lea rax regex-return-true))
+  [(DFA _ _ start _ _)
+ 
+    (seq (Lea rax (get-label start)))
+    ; TODO remove this comment
+    ;(seq (Lea rax regex-return-true))
     ])
 )
 
@@ -353,8 +387,10 @@
               ;Stack will be 16-byte aligned
               (seq
                   ;; string address stays in rax
-                  ;; push the curr position 0 to r9
-                  (Mov r9 0)
+                  (assert-string rax)
+                  (Xor rax type-string)
+                  ;; push the length of string onto r9
+                  (Mov r9 (Offset rax 0))
                   ;; jump to regex, current address stored on stack using (Call) for (Ret)
                   (Pop r8)
                   (Call r8)
@@ -362,7 +398,9 @@
 
               ; stack will not be 16 byte aligned
               (seq (Sub rsp 8)
-                  (Mov r9 0)
+                  (assert-string rax)
+                  (Xor rax type-string)
+                  (Mov r9 (Offset rax 0))
                   (Pop r8)
                   (Call r8)
                   (Add rsp 8)
