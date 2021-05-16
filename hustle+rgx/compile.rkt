@@ -2,14 +2,14 @@
 (provide (all-defined-out))
 (require "ast.rkt" "types.rkt" a86/ast)
 
-;; for testing purposes
-(require "parse.rkt" "regex.rkt")
+;; define wild struct that is present in dfa
+(struct Wild () #:prefab)
 
 ;; Registers used
 (define rax 'rax) ; return
 (define rbx 'rbx) ; heap
-(define r8  'r8)  ; scratch in +, -
-(define r9  'r9)  ; scratch in assert-type
+(define r8  'r8)  ; scratch in +, -, regex
+(define r9  'r9)  ; scratch in assert-type, regex
 (define rsp 'rsp) ; stack
 (define rdi 'rdi) ; arg
 
@@ -105,7 +105,7 @@
     ;; if the is final state, then jump to TRUE
     (seq        (Jmp regex-return-true))
     ;; else jump to FALSE
-    (seq         (Jmp regex-return-false))
+    (seq        (Jmp regex-return-false))
   )
 )
 
@@ -193,9 +193,7 @@
     ])
 )
 
-;; DONE: Compile string
 (define (compile-string s)
-  ;; DONE: Replace with your solution
   (seq 
      (Mov rax (imm->bits (string-length s)))
      (Mov (Offset rbx 0) rax)
@@ -298,8 +296,6 @@
                (Xor rax type-cons)
                (Mov rax (Offset rax 0)))]
          ['empty? (eq-imm val-empty)]
-         ;; DONE: string-length 
-         ;; DONE: string?
          ['string?       
           (let ((l1 (gensym)))
             (seq (And rax ptr-mask)
@@ -389,7 +385,7 @@
             ;; make sure stack is 16-byte aligned
             ;; https://www.cs.umd.edu/class/spring2021/cmsc430/Iniquity.html
             (if (even? (length c))
-              ;Stack will be 16-byte aligned
+              ;; Stack will be 16-byte aligned
               (seq
                   ;; string address stays in rax
                   (assert-string rax)
@@ -402,18 +398,16 @@
                   (Call r8)
               )
 
-              ;; TODO fix stack alignment
-
-              ; stack will not be 16 byte aligned
+              ;; Stack will not be 16-byte aligned
               (seq 
                   (assert-string rax)
                   (Xor rax type-string)
                   (Mov r9 (Offset rax 0))
                   (Sar r9 4)
                   (Pop r8)
-                  (Sub rsp 8)
+                  (Sub rsp 8) ;; align to 16 bytes
                   (Call r8)
-                  (Add rsp 8)
+                  (Add rsp 8) ;; reset stack to where it was before
               )
             
             )

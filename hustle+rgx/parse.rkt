@@ -16,18 +16,28 @@
     [(list (? (op? op0) p0))       (Prim0 p0)]           
     [(list (? (op? op1) p1) e)     (Prim1 p1 (parse e))]
 
-    ;; Added special condition to parse Regex
+    ;; Parse regex for an exact match
     [(list (? (op? '(regexp-match-exact?)) p2) (? string? e1) e2) (parse-regex-match e1 e2)]
 
-    ;; Added special condition to parse substr Regex
-    ;; TODO add parenthesis around string if not already there
-    [(list (? (op? '(regexp-match?)) p2) (? string? e1) e2) 
-        (cond
-          [(equal? (string-length e1) 0)      (parse-regex-match (string-append ".*" e1 ".*") e2)]
-          [(equal? (string-ref e1 0) #\( )    (parse-regex-match (string-append ".*" e1 ".*") e2)]
-          [else                               (parse-regex-match (string-append ".*(" e1 ").*") e2)]
-        )]
-    
+    ;; Parse regex for substring matching, preprocess for ^ and $
+    [(list (? (op? '(regexp-match?)) p2) (? string? e1) e2)
+        (if (equal? (string-length e1) 0)
+          (parse-regex-match (string-append ".*" e1 ".*") e2)
+          (let ((anchor1 (string-ref e1 0))
+                (anchor2 (string-ref e1 (sub1 (string-length e1)))))
+            (cond
+              [(and (equal? anchor1 #\^) (equal? anchor2 #\$)) ;; anchored at both
+               (parse-regex-match (substring e1 1 (sub1 (string-length e1))) e2)]
+              [(equal? anchor1 #\^) ;; anchored only at beginning
+               (if (string=? (substring e1 1) "")
+                   (parse-regex-match ".*" e2)
+                   (parse-regex-match (string-append "(" (substring e1 1) ").*") e2))]
+              [(equal? anchor2 #\$) ;; anchored only at end
+               (if (string=? (substring e1 0 (sub1 (string-length e1))) "")
+                   (parse-regex-match ".*" e2)
+                   (parse-regex-match (string-append ".*(" (substring e1 0 (sub1 (string-length e1))) ")") e2))]
+              [else
+               (parse-regex-match (string-append ".*(" e1 ").*") e2)])))]
 
     [(list (? (op? op2) p2) e1 e2) (Prim2 p2 (parse e1) (parse e2))]
     [(list 'begin e1 e2)

@@ -12,8 +12,8 @@ TODOS:
    -  <del> c) Convert the NFA struct into DFA struct <del>
    -  <del> d) Store reduction as (Prim2 'regexp-match? DFA string) <del>
 - 3) In the compiler:
-   - <del>a) At the start of compilation, find all 'regex-match clauses in the program <del>
-   - b) Create a regex tree for each 'regex-match clause (using global labels for return-true and return-false)
+   - <del> a) At the start of compilation, find all 'regex-match clauses in the program <del>
+   - <del> b) Create a regex tree for each 'regex-match clause (using global labels for return-true and return-false) <del>
       -  <del> a) Create a mapping of states to gensym labels. Create a function that returns
       all transitions from a given state. Create a function that returns a label given a state <del>
       -  <del> b) For each state/transition in the DFA struct, create Jumps to other states. Create special case <del>
@@ -26,8 +26,8 @@ TODOS:
 
 STRETCH
 - <del> Add substring matching: \.\*<reg-exp>\.\* <del>
-- Add support for quantifiers
-- Add support for anchors: ^ and $
-- Add support for quantifiers: + and {}
+- <del> Add support for anchors: ^ and $ <del>
+- <del> Add support for quantifiers + <del>
+- Add support for quantifier {}
 - Add support for character classes: [abc]
 - Add support to return first substring matched

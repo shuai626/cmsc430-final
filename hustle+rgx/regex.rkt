@@ -5,8 +5,6 @@
 ;; Contains the logic to tokenize the regular expression, convert to an NFA,
 ;; and convert the NFA to a DFA
 
-;; Add to this as needed hehe :)
-
 ;; DFA defined in ast.rkt
 ;; (NFA Sigma States Start Final Transitions)
 (struct NFA          (s q q0 f t) #:prefab)
@@ -18,6 +16,7 @@
 ;;            | (Star Regex)
 ;;            | (Wild)
 ;;            | (Question Regex)
+;;            | (Plus Regex)
 
 (struct Empty_String ()           #:prefab)
 (struct Reg_Char     (c)          #:prefab)
@@ -26,12 +25,14 @@
 (struct Star         (rxp)        #:prefab)
 (struct Wild         ()           #:prefab)
 (struct Question     (rxp)        #:prefab)
+(struct Plus         (rxp)        #:prefab)
 
 ;; type Token = (Tok_Char Character)
 ;;            | (Tok_Epsilon)
 ;;            | (Tok_Union)
 ;;            | (Tok_Star)
 ;;            | (Tok_Wild)
+;;            | (Tok_Plus)
 ;;            | (Tok_LParen)
 ;;            | (Tok_RParen)
 ;;            | (Tok_END)
@@ -41,6 +42,7 @@
 (struct Tok_Star     ()           #:prefab)
 (struct Tok_Wild     ()           #:prefab)
 (struct Tok_Question ()           #:prefab)
+(struct Tok_Plus     ()           #:prefab)
 (struct Tok_LParen   ()           #:prefab)
 (struct Tok_RParen   ()           #:prefab)
 (struct Tok_END      ()           #:prefab)
@@ -58,6 +60,7 @@
               [(string=? c "*")           (cons (Tok_Star) (tok (add1 pos) s))]
               [(string=? c ".")           (cons (Tok_Wild) (tok (add1 pos) s))]
               [(string=? c "?")           (cons (Tok_Question) (tok (add1 pos) s))]
+              [(string=? c "+")           (cons (Tok_Plus) (tok (add1 pos) s))]
               [(string=? c "(")           (cons (Tok_LParen) (tok (add1 pos) s))]
               [(string=? c ")")           (cons (Tok_RParen) (tok (add1 pos) s))]
               [(error "Tokenize error")]
@@ -66,7 +69,7 @@
 
 ;;   S -> A Tok_Union S | A
 ;;   A -> B A | B
-;;   B -> C Tok_Star | C Tok_Question | C
+;;   B -> C Tok_Star | C Tok_Question | C Tok_Plus | C
 ;;   C -> Tok_Char | Tok_Wild | Tok_LParen S Tok_RParen
 ;;   FIRST(S) = Tok_Char | Tok_Wild | Tok_LParen
 ;;   FIRST(A) = Tok_Char | Tok_Wild | Tok_LParen
@@ -108,6 +111,7 @@
       (match t
         [(Tok_Star) (values (Star a1) n)]
         [(Tok_Question) (values (Question a1) n)]
+        [(Tok_Plus) (values (Plus a1) n)]
         [_  (values a1 l1)])))
   (define (parse_C l)
     (let-values (((t n)   (lookahead l)))
@@ -199,7 +203,8 @@
                           s0
                           (list s1)
                           (union adelta (union (list (list s0 null astart) (list s0 null s1)) (unwind-states aaccepts s1)))
-                          )]))]))
+                          )]))]
+    [(Plus rxp) (regexp-to-nfa (Concat rxp (Star rxp)))]))
 
 (define (eq-trans? t v)
   (match* (t v)

@@ -127,7 +127,7 @@
 
   (check-equal? (run '(regexp-match-exact? "(a|b)*" "abbaaabbababa")) #t)
 
-   (check-equal? (run '(regexp-match? "" "a")) #t)
+  (check-equal? (run '(regexp-match? "" "a")) #t)
   (check-equal? (run '(regexp-match? "" "")) #t)
 
   (check-equal? (run '(regexp-match? "." "a")) #t)
@@ -151,6 +151,7 @@
   (check-equal? (run '(regexp-match? "abcaa" "abca")) #f)
 
   (check-equal? (run '(regexp-match? "a*" "a")) #t)
+  (check-equal? (run '(regexp-match? "a*" "")) #t)
   (check-equal? (run '(regexp-match? "a*" "aaaaa")) #t)
   (check-equal? (run '(regexp-match? "a*" "aaaaaaaaab")) #t)
   (check-equal? (run '(regexp-match? "a*b" "b")) #t)
@@ -163,6 +164,13 @@
   (check-equal? (run '(regexp-match? "a?" "bbbabbb")) #t)
   (check-equal? (run '(regexp-match? "a?" "b")) #t)
   
+  (check-equal? (run '(regexp-match? "a+" "a")) #t)
+  (check-equal? (run '(regexp-match? "a+" "")) #f)
+  (check-equal? (run '(regexp-match? "a+" "aaaaa")) #t)
+  (check-equal? (run '(regexp-match? "a+" "aaaaaaaaab")) #t)
+  (check-equal? (run '(regexp-match? "a+b" "b")) #f)
+  (check-equal? (run '(regexp-match? "a+b" "aaaaaaaaab")) #t)
+
   (check-equal? (run '(regexp-match? "(.a|bc)*" "bcbcbcda")) #t)
   (check-equal? (run '(regexp-match? "(.ce|bc)" "ace")) #t)
   (check-equal? (run '(regexp-match? "(.ce|bc)" "bc")) #t)
@@ -171,6 +179,16 @@
 
   (check-equal? (run '(let ((x "OKAY123")) (regexp-match? "KAY" x))) #t)
   (check-equal? (run '(let ((x "OKAY123")) (let ((y "OKAY123")) (regexp-match? "KAY" x)))) #t)
+
+  (check-equal? (run '(regexp-match? "^$" "")) #t)
+  (check-equal? (run '(regexp-match? "^" "ace")) #t)
+  (check-equal? (run '(regexp-match? "$" "bc")) #t)
+  (check-equal? (run '(regexp-match? "^hello$" "hello")) #t)
+  (check-equal? (run '(regexp-match? "^hello$" "helloooo")) #f)
+  (check-equal? (run '(regexp-match? "^hello" "hellothere")) #t)
+  (check-equal? (run '(regexp-match? "^.*xyz" "xyz430")) #t)
+  (check-equal? (run '(regexp-match? "^.*xyz" "abcdefghixyz123")) #t)
+  (check-equal? (run '(regexp-match? "(ab|c)*hello$" "cmsc430abacbacchello")) #t)
 )  
 
 (define (test-runner-io run)
