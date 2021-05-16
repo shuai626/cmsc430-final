@@ -179,6 +179,8 @@
 
   (check-equal? (run '(let ((x "OKAY123")) (regexp-match? "KAY" x))) #t)
   (check-equal? (run '(let ((x "OKAY123")) (let ((y "OKAY123")) (regexp-match? "KAY" x)))) #t)
+  (check-equal? (run '(let ((x "OKAY123")) (let ((y "OKAY123"))
+                        (if (regexp-match? "KAY" x) (regexp-match? "false" y) #t)))) #f)
 
   (check-equal? (run '(regexp-match? "^$" "")) #t)
   (check-equal? (run '(regexp-match? "^" "ace")) #t)
