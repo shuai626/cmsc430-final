@@ -95,37 +95,79 @@
 
 
   ;; Hustle+Rgx examples
-  (check-equal? (run '(regex-match "" "a")) #f)
-  (check-equal? (run '(regex-match "" "")) #t)
+  (check-equal? (run '(regex-match-exact? "" "a")) #f)
+  (check-equal? (run '(regex-match-exact? "" "")) #t)
 
-  (check-equal? (run '(regex-match "." "a")) #t)
-  (check-equal? (run '(regex-match "." "b")) #t)
-  (check-equal? (run '(regex-match "." "bb")) #f)
+  (check-equal? (run '(regex-match-exact? "." "a")) #t)
+  (check-equal? (run '(regex-match-exact? "." "b")) #t)
+  (check-equal? (run '(regex-match-exact? "." "bb")) #f)
 
-  (check-equal? (run '(regex-match "a" "a")) #t)
-  (check-equal? (run '(regex-match "a" "b")) #f)
+  (check-equal? (run '(regex-match-exact? "a" "a")) #t)
+  (check-equal? (run '(regex-match-exact? "a" "b")) #f)
 
-  (check-equal? (run '(regex-match "a|b" "a")) #t)
-  (check-equal? (run '(regex-match "a|b" "b")) #t)
-  (check-equal? (run '(regex-match "a|b" "c")) #f)
+  (check-equal? (run '(regex-match-exact? "a|b" "a")) #t)
+  (check-equal? (run '(regex-match-exact? "a|b" "b")) #t)
+  (check-equal? (run '(regex-match-exact? "a|b" "c")) #f)
 
-  (check-equal? (run '(regex-match "abcaa" "abcaa")) #t)
-  (check-equal? (run '(regex-match "abcaa" "abca")) #f)
+  (check-equal? (run '(regex-match-exact? "abcaa" "abcaa")) #t)
+  (check-equal? (run '(regex-match-exact? "abcaa" "abca")) #f)
 
-  (check-equal? (run '(regex-match "a*" "a")) #t)
-  (check-equal? (run '(regex-match "a*" "aaaaa")) #t)
-  (check-equal? (run '(regex-match "a*" "aaaaaaaaab")) #f)
-  (check-equal? (run '(regex-match "a*b" "aaaaaaaaab")) #t)
+  (check-equal? (run '(regex-match-exact? "a*" "a")) #t)
+  (check-equal? (run '(regex-match-exact? "a*" "aaaaa")) #t)
+  (check-equal? (run '(regex-match-exact? "a*" "aaaaaaaaab")) #f)
+  (check-equal? (run '(regex-match-exact? "a*b" "aaaaaaaaab")) #t)
 
-  (check-equal? (run '(regex-match "a?" "")) #t)
-  (check-equal? (run '(regex-match "a?" "a")) #t)
-  (check-equal? (run '(regex-match "a?" "b")) #f)
+  (check-equal? (run '(regex-match-exact? "a?" "")) #t)
+  (check-equal? (run '(regex-match-exact? "a?" "a")) #t)
+  (check-equal? (run '(regex-match-exact? "a?" "b")) #f)
   
-  (check-equal? (run '(regex-match "(.a|bc)*" "bcbcbcda")) #t)
-  (check-equal? (run '(regex-match "(.ce|bc)" "ace")) #t)
-  (check-equal? (run '(regex-match "(.ce|bc)" "bc")) #t)
+  (check-equal? (run '(regex-match-exact? "(.a|bc)*" "bcbcbcda")) #t)
+  (check-equal? (run '(regex-match-exact? "(.ce|bc)" "ace")) #t)
+  (check-equal? (run '(regex-match-exact? "(.ce|bc)" "bc")) #t)
 
-  (check-equal? (run '(regex-match "(a|b)*" "abbaaabbababa")) #t)
+  (check-equal? (run '(regex-match-exact? "(a|b)*" "abbaaabbababa")) #t)
+
+   (check-equal? (run '(regex-match? "" "a")) #t)
+  (check-equal? (run '(regex-match? "" "")) #t)
+
+  (check-equal? (run '(regex-match? "." "a")) #t)
+  (check-equal? (run '(regex-match? "." "b")) #t)
+  (check-equal? (run '(regex-match? "." "bb")) #t)
+
+  (check-equal? (run '(regex-match? "a" "a")) #t)
+  (check-equal? (run '(regex-match? "a" "paw")) #t)
+  (check-equal? (run '(regex-match? "a" "b")) #f)
+
+  (check-equal? (run '(regex-match? "a|b" "a")) #t)
+  (check-equal? (run '(regex-match? "a|b" "bad")) #t)
+  (check-equal? (run '(regex-match? "a|b" "b")) #t)
+  (check-equal? (run '(regex-match? "a|b" "bbbbbba")) #t)
+  (check-equal? (run '(regex-match? "a|b" "ddddddda")) #t)
+  (check-equal? (run '(regex-match? "a|b" "pad")) #t)
+  (check-equal? (run '(regex-match? "a|b" "c")) #f)
+
+  (check-equal? (run '(regex-match? "abcaa" "abcaa")) #t)
+  (check-equal? (run '(regex-match? "abcaa" "bbbabcaabbb")) #t)
+  (check-equal? (run '(regex-match? "abcaa" "abca")) #f)
+
+  (check-equal? (run '(regex-match? "a*" "a")) #t)
+  (check-equal? (run '(regex-match? "a*" "aaaaa")) #t)
+  (check-equal? (run '(regex-match? "a*" "aaaaaaaaab")) #t)
+  (check-equal? (run '(regex-match? "a*b" "b")) #t)
+  (check-equal? (run '(regex-match? "a*b" "aaaaaaaaab")) #t)
+  (check-equal? (run '(regex-match? "a*b" "ddddddddb")) #t)
+  (check-equal? (run '(regex-match? "a*b" "dddddddd")) #f)
+
+  (check-equal? (run '(regex-match? "a?" "")) #t)
+  (check-equal? (run '(regex-match? "a?" "a")) #t)
+  (check-equal? (run '(regex-match? "a?" "bbbabbb")) #t)
+  (check-equal? (run '(regex-match? "a?" "b")) #t)
+  
+  (check-equal? (run '(regex-match? "(.a|bc)*" "bcbcbcda")) #t)
+  (check-equal? (run '(regex-match? "(.ce|bc)" "ace")) #t)
+  (check-equal? (run '(regex-match? "(.ce|bc)" "bc")) #t)
+
+  (check-equal? (run '(regex-match? "(a|b)*" "abbaaabbababa")) #t)
 )  
 
 (define (test-runner-io run)

@@ -385,7 +385,7 @@
                     (Sub r8 1)
                     (Jmp l1)
                     (Label l2)))]
-          ['regex-match
+          ['regex-match?
             ;; make sure stack is 16-byte aligned
             ;; https://www.cs.umd.edu/class/spring2021/cmsc430/Iniquity.html
             (if (even? (length c))
