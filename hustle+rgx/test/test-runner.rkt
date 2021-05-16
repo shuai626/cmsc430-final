@@ -95,8 +95,15 @@
 
 
   ;; Hustle+Rgx examples
-  (check-equal? (run '(regex-match "a" "a")) #t)
-                )  
+  (check-equal? (run '(regex-match "" "a")) #f)
+  (check-equal? (run '(regex-match "" "")) #t)
+  (check-equal? (run '(regex-match "." "a")) #t)
+  (check-equal? (run '(regex-match "." "b")) #t)
+  (check-equal? (run '(regex-match "." "bb")) #f)
+  
+                
+                
+)  
 
 (define (test-runner-io run)
   ;; Evildoer examples
