@@ -62,11 +62,9 @@
 (define (compile-dfa-define dfa)
   (match dfa
   [(DFA sigma states start accepts delta)
-    (let ((s-to-l (states-to-labels states)))
-        (begin (set! global-s-to-l (append global-s-to-l s-to-l))
+        (begin (set! global-s-to-l (append global-s-to-l (states-to-labels states)))
           (compile-dfa-states states start accepts delta)
-        )
-      )])
+        )])
 )
 
 (define (compile-dfa-states states start accepts delta)
@@ -79,11 +77,11 @@
 )
 
 ;; TODO compile the states
-;; TODO add number to stack that stores where we are in string?
-;; TODO get string off the stack as well
+;; TODO add number to stack that stores where we are in string to r9
+;; TODO get string off the stack as well to r8
 (define (compile-dfa-state state start accepts delta)
   (seq
-              (Label (get-label state global-s-to-l))
+              (Label (get-label state))
               ;;if start state, then pop string off stack
 
               ;; use code similar to make-ref to load curr char 
@@ -122,14 +120,11 @@
 )
 
 ;; helper function to look-up label mapped to state
-(define (get-label state states-to-labels)
-  (match states-to-labels
-    [(cons (list s label) l) 
-      (if (eq? s state)
-        label
-        (get-label state l))]
-  )
-)
+(define (get-label state)
+  (foldl (lambda (v l) 
+      (match v
+      [(list s label)
+        (if (eq? s state) label l)])) null global-s-to-l))
 
 ;; Expr CEnv -> Asm
 (define (compile-e e c)
@@ -149,13 +144,14 @@
     [(Let x e1 e2)      (compile-let x e1 e2 c)]
     [(DFA _ _ _ _ _)    (compile-dfa e)]))
 
-
-;; TODO check if mask is needed?
 ;; returns effective address of the starting state of dfa
 (define (compile-dfa dfa)
   (match dfa
   [(DFA _ _ start _ _)      
-    (seq (Lea rax (get-label start global-s-to-l)))])
+    ;(seq (Lea rax (get-label start)))
+    
+    (seq (Lea rax regex-return-true))
+    ])
 )
 
 ;; DONE: Compile string
@@ -351,15 +347,28 @@
                     (Jmp l1)
                     (Label l2)))]
           ['regex-match
-            ;; TODO - make sure stack is 16-byte aligned for function call 
+            ;; make sure stack is 16-byte aligned
             ;; https://www.cs.umd.edu/class/spring2021/cmsc430/Iniquity.html
+            (if (even? (length c))
+              ;Stack will be 16-byte aligned
+              (seq
+                  ;; string address stays in rax
+                  ;; push the curr position 0 to r9
+                  (Mov r9 0)
+                  ;; jump to regex, current address stored on stack using (Call) for (Ret)
+                  (Pop r8)
+                  (Call r8)
+              )
 
-            ;;TODO - push current address onto stack for (Ret)
-            ;; TODO - push compiled string address onto stack as well
-            ;; TODO - push the number 0
-            ;; grab effective address from compiled regex
-            ;; maybe add a mask to verify? although it should be guarenteed dfa from parsing
-            (seq)
+              ; stack will not be 16 byte aligned
+              (seq (Sub rsp 8)
+                  (Mov r9 0)
+                  (Pop r8)
+                  (Call r8)
+                  (Add rsp 8)
+              )
+            
+            )
           ]
          )))
 

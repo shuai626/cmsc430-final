@@ -91,7 +91,12 @@
   (check-equal? (run '(let ((x (cons 1 2)))
                         (let ((y (box 3)))
                           (unbox y))))
-                3))  
+                3)
+
+
+  ;; Hustle+Rgx examples
+  (check-equal? (run '(regex-match "a" "a")) #t)
+                )  
 
 (define (test-runner-io run)
   ;; Evildoer examples
