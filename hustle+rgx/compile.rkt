@@ -385,7 +385,7 @@
                     (Sub r8 1)
                     (Jmp l1)
                     (Label l2)))]
-          ['regex-match?
+          ['regexp-match?
             ;; make sure stack is 16-byte aligned
             ;; https://www.cs.umd.edu/class/spring2021/cmsc430/Iniquity.html
             (if (even? (length c))
@@ -402,13 +402,16 @@
                   (Call r8)
               )
 
+              ;; TODO fix stack alignment
+
               ; stack will not be 16 byte aligned
-              (seq (Sub rsp 8)
+              (seq 
                   (assert-string rax)
                   (Xor rax type-string)
                   (Mov r9 (Offset rax 0))
                   (Sar r9 4)
                   (Pop r8)
+                  (Sub rsp 8)
                   (Call r8)
                   (Add rsp 8)
               )
