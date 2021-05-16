@@ -76,7 +76,6 @@
   )
 )
 
-;; TODO compile the states
 (define (compile-dfa-state state start accepts delta)
   (let ((l1 (gensym))
         (l2 (gensym)))
@@ -110,7 +109,6 @@
   )
 )
 
-;; TODO debug wildcard
 (define (compile-dfa-state-immt-char state-transitions)
   ;; for each state, create jumps to other states given the transitions
   ;; if char, then jump
@@ -191,10 +189,7 @@
 (define (compile-dfa dfa)
   (match dfa
   [(DFA _ _ start _ _)
- 
     (seq (Lea rax (get-label start)))
-    ; TODO remove this comment
-    ;(seq (Lea rax regex-return-true))
     ])
 )
 

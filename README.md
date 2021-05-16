@@ -16,16 +16,16 @@ TODOS:
    - b) Create a regex tree for each 'regex-match clause (using global labels for return-true and return-false)
       -  <del> a) Create a mapping of states to gensym labels. Create a function that returns
       all transitions from a given state. Create a function that returns a label given a state <del>
-      -  b) For each state/transition in the DFA struct, create Jumps to other states. Create special case
+      -  <del> b) For each state/transition in the DFA struct, create Jumps to other states. Create special case <del>
       for (Wild) char
-      -  c) If we reach the end of the string, and we're at a final state, then return True. Else return False
-   - c) compile-dfa loads address of dfa's start-state into rax
-   - d) compiling prim2 clause will store current memory location into memory, push string
-   pointer to memory, then jump to dfa's start-state
+      -  <del> c) If we reach the end of the string, and we're at a final state, then return True. Else return False <del>
+   - <del> c) compile-dfa loads address of dfa's start-state into rax <del>
+   - <del> d) compiling prim2 clause will store current memory location into memory, push string
+   pointer to stratch register, then jump to dfa's start-state <del>
 
 
 STRETCH
-- Add substring matching
+- Add substring matching: \.\*<reg-exp>\.\*
 - Add support for quantifiers
 - Add support for anchors: ^ and $
 - Add support for quantifiers: + and {}
