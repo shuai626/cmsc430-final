@@ -5,12 +5,12 @@ Reg-exp will support empty strings, characters, unions, concatenations, and klee
 Reg-exp may also support wildcard, negation, etc.
 
 TODOS:
-- 1) <del> Create a new Prim2 struct (Prim2 'regex-match? DFA string) which stores a DFA struct and a string <del>
-- 2) <del> During parsing, create (Prim2 'regex-match? DFA string) struct. 'regex-match? calls will come in as ('regex-match? <regex_string> <input_string>). <del>
+- 1) <del> Create a new Prim2 struct (Prim2 'regexp-match? DFA string) which stores a DFA struct and a string <del>
+- 2) <del> During parsing, create (Prim2 'regexp-match? DFA string) struct. 'regexp-match? calls will come in as ('regexp-match? <regex_string> <input_string>). <del>
    -  <del> a) Check that <regex string> is a valid regular expression <del>
    -  <del> b) Convert the valid <regex string> into an NFA struct <del>
    -  <del> c) Convert the NFA struct into DFA struct <del>
-   -  <del> d) Store reduction as (Prim2 'regex-match? DFA string) <del>
+   -  <del> d) Store reduction as (Prim2 'regexp-match? DFA string) <del>
 - 3) In the compiler:
    - <del>a) At the start of compilation, find all 'regex-match clauses in the program <del>
    - b) Create a regex tree for each 'regex-match clause (using global labels for return-true and return-false)

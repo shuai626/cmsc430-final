@@ -17,16 +17,17 @@
     [(list (? (op? op1) p1) e)     (Prim1 p1 (parse e))]
 
     ;; Added special condition to parse Regex
-    [(list (? (op? '(regex-match-exact?)) p2) (? string? e1) (? string? e2)) (parse-regex-match e1 e2)]
+    [(list (? (op? '(regexp-match-exact?)) p2) (? string? e1) e2) (parse-regex-match e1 e2)]
 
     ;; Added special condition to parse substr Regex
     ;; TODO add parenthesis around string if not already there
-    [(list (? (op? '(regex-match?)) p2) (? string? e1) (? string? e2)) 
+    [(list (? (op? '(regexp-match?)) p2) (? string? e1) e2) 
         (cond
           [(equal? (string-length e1) 0)      (parse-regex-match (string-append ".*" e1 ".*") e2)]
           [(equal? (string-ref e1 0) #\( )    (parse-regex-match (string-append ".*" e1 ".*") e2)]
           [else                               (parse-regex-match (string-append ".*(" e1 ").*") e2)]
         )]
+    
 
     [(list (? (op? op2) p2) e1 e2) (Prim2 p2 (parse e1) (parse e2))]
     [(list 'begin e1 e2)
@@ -39,7 +40,12 @@
 
 ;; Added function to parse regex-match
 (define (parse-regex-match regex str) 
-  (Prim2 'regex-match? (nfa-to-dfa (regexp-to-nfa (string-to-regexp regex))) (String str))
+  (cond
+  [(string? str)      (Prim2 'regexp-match? (nfa-to-dfa (regexp-to-nfa (string-to-regexp regex))) (String str))]
+  [(symbol? str)      (Prim2 'regexp-match? (nfa-to-dfa (regexp-to-nfa (string-to-regexp regex))) (Var str))]
+  [else (error "Regex parse error")]
+  )
+  
 )
 
 (define op0

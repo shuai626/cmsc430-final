@@ -28,7 +28,7 @@
 ;;           | 'string-ref | 'make-string
 ;;           | 'cons
 ;;           | '= | '< | '<= | 'char=? | 'boolean=?
-;;           | 'regex-match? 
+;;           | 'regexp-match? 
 
 (struct Eof    ()           #:prefab)
 (struct Empty  ()           #:prefab)
