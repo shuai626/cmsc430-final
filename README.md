@@ -25,7 +25,7 @@ TODOS:
 
 
 STRETCH
-- Add substring matching: \.\*<reg-exp>\.\*
+- <del> Add substring matching: \.\*<reg-exp>\.\* <del>
 - Add support for quantifiers
 - Add support for anchors: ^ and $
 - Add support for quantifiers: + and {}
