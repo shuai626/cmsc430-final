@@ -30,4 +30,5 @@ STRETCH
 - <del> Add support for quantifiers + <del>
 - Add support for quantifier {}
 - Add support for character classes: [abc]
+- Add DFA minimization algorithm : Brzozoski's Algorithm
 - Add support to return first substring matched
