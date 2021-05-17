@@ -18,6 +18,7 @@
 ;;            | (Question Regex)
 ;;            | (Plus Regex)
 ;;            | (Quantifier Range Regex)
+;;            | (Class list of Reg_Char)
 
 (struct Empty_String ()           #:prefab)
 (struct Reg_Char     (c)          #:prefab)
@@ -28,7 +29,8 @@
 (struct Question     (rxp)        #:prefab)
 (struct Plus         (rxp)        #:prefab)
 (struct Quantifier   (range rxp)  #:prefab)
-(struct Range        (low high)   #:prefab) ;; use nil if either side is undefined (null null == *)
+(struct Range        (low high)   #:prefab) ;; use null if either side is undefined (null null == *)
+(struct Class        (l)          #:prefab)
 
 ;; type Token = (Tok_Char Character)
 ;;            | (Tok_Epsilon)
@@ -38,9 +40,12 @@
 ;;            | (Tok_Plus)
 ;;            | (Tok_LParen)
 ;;            | (Tok_RParen)
+;;            | (Tok_LCurly)
+;;            | (Tok_RCurly)
+;;            | (Tok_Comma)
 ;;            | (Tok_LBrace)
 ;;            | (Tok_RBrace)
-;;            | (Tok_Comma)
+;;            | (Tok_Hyphen)
 ;;            | (Tok_END)
 
 (struct Tok_Char     (c)          #:prefab)
@@ -54,6 +59,9 @@
 (struct Tok_LCurly   ()           #:prefab)
 (struct Tok_RCurly   ()           #:prefab)
 (struct Tok_Comma    ()           #:prefab)
+(struct Tok_LBrace   ()           #:prefab)
+(struct Tok_RBrace   ()           #:prefab)
+(struct Tok_Hyphen   ()           #:prefab)
 (struct Tok_END      ()           #:prefab)
 
 ;; Basic pattern for tokenizing
@@ -75,6 +83,9 @@
               [(string=? c "{")           (cons (Tok_LCurly) (tok (add1 pos) s))]
               [(string=? c "}")           (cons (Tok_RCurly) (tok (add1 pos) s))]
               [(string=? c ",")           (cons (Tok_Comma) (tok (add1 pos) s))]
+              [(string=? c "[")           (cons (Tok_LBrace) (tok (add1 pos) s))]
+              [(string=? c "]")           (cons (Tok_RBrace) (tok (add1 pos) s))]
+              [(string=? c "-")           (cons (Tok_Hyphen) (tok (add1 pos) s))]
               [(error "Tokenize error")]
             ))))
     (tok 0 str)))
@@ -82,15 +93,21 @@
 ;;   S -> A Tok_Union S | A
 ;;   A -> B A | B
 ;;   B -> C Tok_Star | C Tok_Question | C Tok_Plus | C Tok_LCurly D | C
-;;   C -> Tok_Char | Tok_Wild | Tok_LParen S Tok_RParen
+;;   C -> Tok_Char | Tok_Wild | Tok_LParen S Tok_RParen | Tok_LBrace G Tok_RBrace
 ;;   D -> Tok_RCurly | E Tok_RCurly
-;;   E -> Tok_Char | Tok_Char Tok_Comma | Tok_Char Tok_Comma Tok_Char | Tok_Comma Tok_Char
-;;   FIRST(S) = Tok_Char | Tok_Wild | Tok_LParen
-;;   FIRST(A) = Tok_Char | Tok_Wild | Tok_LParen
-;;   FIRST(B) = Tok_Char | Tok_Wild | Tok_LParen
-;;   FIRST(C) = Tok_Char | Tok_Wild | Tok_LParen
+;;   E -> F Tok_Comma F | Tok_Comma F | F
+;;   F -> Tok_Char F | Tok_Char
+;;   G -> H G | H
+;;   H -> Tok_Char Tok_Hyphen TokChar | TokChar
+;;   FIRST(S) = Tok_Char | Tok_Wild | Tok_LParen | Tok_LBrace
+;;   FIRST(A) = Tok_Char | Tok_Wild | Tok_LParen | Tok_LBrace
+;;   FIRST(B) = Tok_Char | Tok_Wild | Tok_LParen | Tok_LBrace
+;;   FIRST(C) = Tok_Char | Tok_Wild | Tok_LParen | Tok_LBrace
 ;;   FIRST(D) = Tok_RCurly | Tok_Char | Tok_Comma
 ;;   FIRST(E) = Tok_Char | Tok_Comma
+;;   FIRST(F) = Tok_Char
+;;   FIRST(G) = Tok_Char
+;;   FIRST(H) = Tok_Char
 
 (define (parse-regexp tok-list)
   (define (lookahead toks)
@@ -120,6 +137,9 @@
         [(Tok_LParen)
           (let-values (((a2 l2) (parse_A l1)))
             (values (Concat a1 a2) l2))]
+        [(Tok_LBrace)
+          (let-values (((a2 l2) (parse_A l1)))
+            (values (Concat a1 a2) l2))]
         [_  (values a1 l1)])))
   (define (parse_B l)
     (let*-values (((a1 l1) (parse_C l))
@@ -143,7 +163,13 @@
           (match t2
             [(Tok_RParen)   (values a1 n2)]
             [_              (error "parse-C error 1")]))]
-        [_  (error "parse-C error 2")])))
+        [(Tok_LBrace)
+         (let*-values (((a1 l1) (parse_G n))
+                      ((t2 n2) (lookahead l1)))
+          (match t2
+            [(Tok_RBrace)   (values (Class a1) n2)]
+            [_              (error "parse-C error 2")]))]
+        [_  (error "parse-C error 3")])))
   (define (parse_D l)
     (let-values (((t n) (lookahead l)))
       (match t
@@ -164,31 +190,75 @@
   (define (parse_E l)
     (let-values (((t n) (lookahead l)))
       (match t
-        [(Tok_Char c)
-          (let-values (((t2 n2) (lookahead n)))
+        [(Tok_Char _)
+          (let*-values (((a1 l1) (parse_F l))
+                       ((t2 n2) (lookahead l1)))
             (match t2
               [(Tok_Comma)
                 (let-values (((t3 n3) (lookahead n2)))
                   (match t3
                     ;; both sides bounded
-                    [(Tok_Char c2)
-                     (values (Range (num c) (num c2)) n3)]
+                    [(Tok_Char _)
+                      (let-values (((a2 l2) (parse_F n2)))
+                        (values (Range (num a1) (num a2)) l2))]
                     ;; bounded on left side
-                    [_  (values (Range (num c) null) n2)]))]
-              ;; exact num of instances
-              [_  (values (Range (num c) (num c)) n)]))]
+                    [_ (values (Range (num a1) null) n2)]))]
+              ;; exact num instances
+              [_ (values (Range (num a1) (num a1)) l1)]))]
         [(Tok_Comma)
           (let-values (((t2 n2) (lookahead n)))
             (match t2
               ;; bounded on right side
-              [(Tok_Char c) (values (Range null (num c)) n2)]
-              [_            (error "parse-E error 1")]))]
+              [(Tok_Char _)
+                (let*-values (((a1 l1) (parse_F n)))
+                  (values (Range null (num a1)) l1))]
+              [_           (error "parse-E error 1")]))]
         [_  (error "parse-E error 2")])))
-  (define (num c)
-    (let ((number (string->number (make-string 1 c))))
-      (if (and number) ;; check it is a number
+  (define (parse_F l)
+    (let-values (((t n) (lookahead l)))
+      (match t
+        [(Tok_Char c)
+          (let-values (((a1 l1) (parse_F n)))
+            (values (string-append (make-string 1 c) a1) l1))]
+        [_  (values "" l)])))
+  (define (parse_G l)
+    (let*-values (((a1 l1) (parse_H l))
+                 ((t n)   (lookahead l1)))
+      (match t
+        [(Tok_Char c)
+         (let-values (((a2 l2) (parse_G l1)))
+            (values (set-union a1 a2) l2))]
+        [_  (values a1 l1)])))
+  (define (parse_H l)
+    (let*-values (((t n) (lookahead l))
+                 ((t2 n2) (lookahead n)))
+      (match* (t t2)
+        [((Tok_Char c) (Tok_Hyphen))
+          (let-values (((t3 n3) (lookahead n2)))
+            (match t3
+              [(Tok_Char c2) (values (range-list c c2) n3)]
+              [_             (error "parse-H error 1")]))]
+        [((Tok_Char c) _)    (values (list (Reg_Char c)) n)]
+        [(_ _) (error "parse-H error 2")])))
+  ;; helper used in parse_E to convert to a number for the range
+  (define (num str)
+    (let ((number (string->number str)))
+      ;; check it is a number
+      (if (and number)
           number
-          (error "bad range value"))))
+          (error "bad quantifier range value"))))
+  ;; helper used in parse_H to convert a character range to a list of valid characters
+  (define (range-list c1 c2)
+    (define (gen-char x maximum)
+      (if (> x maximum)
+          '()
+          (cons (Reg_Char (integer->char x)) (gen-char (add1 x) maximum))))
+    ;; get the codepoints for the range
+    (let ((cp1 (char->integer c1))
+          (cp2 (char->integer c2)))
+      (if (< cp2 cp1)
+          (error "bad character class range")
+          (gen-char cp1 cp2))))
   (let-values (((rxp toks) (parse_S tok-list)))
     (match toks
       [(list Tok_END)    rxp]
@@ -268,7 +338,23 @@
                           (list s1)
                           (union adelta (union (list (list s0 null astart) (list s0 null s1)) (unwind-states aaccepts s1)))
                           )]))]
-    [(Plus rxp) (regexp-to-nfa (Concat rxp (Star rxp)))]))
+    [(Plus rxp) (regexp-to-nfa (Concat rxp (Star rxp)))]
+    ;; TODO create NFA for a rxp that is given a range of occurrences
+    [(Quantifier r rxp)
+      (match r
+        [(Range low high)
+          ;; (Range null null) == {}
+          ;; (Range null int) == {,int}
+          ;; (Range int null) == {int,}
+          ;; (Range int1 int2) | (int1 != int2) == {int1,int2}
+          ;; (Range int1 int2) | (int1 == int2) == {int1}
+        ])]
+    ;; TODO create NFA for a list of valid characters
+    [(Class rxps)
+      ;; rxps provided as '((Reg_Char x) (Reg_Char y) (Reg_Char z))
+      ;; single start and final state, connect the two on all provided characters
+    ]
+    ))
 
 (define (eq-trans? t v)
   (match* (t v)
