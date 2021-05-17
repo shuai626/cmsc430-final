@@ -17,6 +17,7 @@
 ;;            | (Wild)
 ;;            | (Question Regex)
 ;;            | (Plus Regex)
+;;            | (Quantifier Range Regex)
 
 (struct Empty_String ()           #:prefab)
 (struct Reg_Char     (c)          #:prefab)
@@ -26,6 +27,8 @@
 (struct Wild         ()           #:prefab)
 (struct Question     (rxp)        #:prefab)
 (struct Plus         (rxp)        #:prefab)
+(struct Quantifier   (range rxp)  #:prefab)
+(struct Range        (low high)   #:prefab) ;; use nil if either side is undefined (null null == *)
 
 ;; type Token = (Tok_Char Character)
 ;;            | (Tok_Epsilon)
@@ -35,6 +38,9 @@
 ;;            | (Tok_Plus)
 ;;            | (Tok_LParen)
 ;;            | (Tok_RParen)
+;;            | (Tok_LBrace)
+;;            | (Tok_RBrace)
+;;            | (Tok_Comma)
 ;;            | (Tok_END)
 
 (struct Tok_Char     (c)          #:prefab)
@@ -45,6 +51,9 @@
 (struct Tok_Plus     ()           #:prefab)
 (struct Tok_LParen   ()           #:prefab)
 (struct Tok_RParen   ()           #:prefab)
+(struct Tok_LCurly   ()           #:prefab)
+(struct Tok_RCurly   ()           #:prefab)
+(struct Tok_Comma    ()           #:prefab)
 (struct Tok_END      ()           #:prefab)
 
 ;; Basic pattern for tokenizing
@@ -63,18 +72,25 @@
               [(string=? c "+")           (cons (Tok_Plus) (tok (add1 pos) s))]
               [(string=? c "(")           (cons (Tok_LParen) (tok (add1 pos) s))]
               [(string=? c ")")           (cons (Tok_RParen) (tok (add1 pos) s))]
+              [(string=? c "{")           (cons (Tok_LCurly) (tok (add1 pos) s))]
+              [(string=? c "}")           (cons (Tok_RCurly) (tok (add1 pos) s))]
+              [(string=? c ",")           (cons (Tok_Comma) (tok (add1 pos) s))]
               [(error "Tokenize error")]
             ))))
     (tok 0 str)))
 
 ;;   S -> A Tok_Union S | A
 ;;   A -> B A | B
-;;   B -> C Tok_Star | C Tok_Question | C Tok_Plus | C
+;;   B -> C Tok_Star | C Tok_Question | C Tok_Plus | C Tok_LCurly D | C
 ;;   C -> Tok_Char | Tok_Wild | Tok_LParen S Tok_RParen
+;;   D -> Tok_RCurly | E Tok_RCurly
+;;   E -> Tok_Char | Tok_Char Tok_Comma | Tok_Char Tok_Comma Tok_Char | Tok_Comma Tok_Char
 ;;   FIRST(S) = Tok_Char | Tok_Wild | Tok_LParen
 ;;   FIRST(A) = Tok_Char | Tok_Wild | Tok_LParen
 ;;   FIRST(B) = Tok_Char | Tok_Wild | Tok_LParen
 ;;   FIRST(C) = Tok_Char | Tok_Wild | Tok_LParen
+;;   FIRST(D) = Tok_RCurly | Tok_Char | Tok_Comma
+;;   FIRST(E) = Tok_Char | Tok_Comma
 
 (define (parse-regexp tok-list)
   (define (lookahead toks)
@@ -112,6 +128,9 @@
         [(Tok_Star) (values (Star a1) n)]
         [(Tok_Question) (values (Question a1) n)]
         [(Tok_Plus) (values (Plus a1) n)]
+        [(Tok_LCurly)
+          (let-values (((a2 l2) (parse_D n))) ;; send the list without the LCurly
+            (values (Quantifier a2 a1) l2))]
         [_  (values a1 l1)])))
   (define (parse_C l)
     (let-values (((t n)   (lookahead l)))
@@ -125,6 +144,51 @@
             [(Tok_RParen)   (values a1 n2)]
             [_              (error "parse-C error 1")]))]
         [_  (error "parse-C error 2")])))
+  (define (parse_D l)
+    (let-values (((t n) (lookahead l)))
+      (match t
+        [(Tok_RCurly) (values (Range null null) n)] ;; range is same as *, represent null null
+        [(Tok_Char c)
+          (let*-values (((a1 l1) (parse_E l))
+                      ((t2 n2)  (lookahead l1)))
+            (match t2
+              [(Tok_RCurly) (values a1 n2)]
+              [_             (error "parse-D error 1")]))]
+        [(Tok_Comma)
+          (let*-values (((a1 l1) (parse_E l))
+                      ((t2 n2)  (lookahead l1)))
+            (match t2
+              [(Tok_RCurly) (values a1 n2)]
+              [_             (error "parse-D error 1")]))]
+        [_  (error "parse-D error 2")])))
+  (define (parse_E l)
+    (let-values (((t n) (lookahead l)))
+      (match t
+        [(Tok_Char c)
+          (let-values (((t2 n2) (lookahead n)))
+            (match t2
+              [(Tok_Comma)
+                (let-values (((t3 n3) (lookahead n2)))
+                  (match t3
+                    ;; both sides bounded
+                    [(Tok_Char c2)
+                     (values (Range (num c) (num c2)) n3)]
+                    ;; bounded on left side
+                    [_  (values (Range (num c) null) n2)]))]
+              ;; exact num of instances
+              [_  (values (Range (num c) (num c)) n)]))]
+        [(Tok_Comma)
+          (let-values (((t2 n2) (lookahead n)))
+            (match t2
+              ;; bounded on right side
+              [(Tok_Char c) (values (Range null (num c)) n2)]
+              [_            (error "parse-E error 1")]))]
+        [_  (error "parse-E error 2")])))
+  (define (num c)
+    (let ((number (string->number (make-string 1 c))))
+      (if (and number) ;; check it is a number
+          number
+          (error "bad range value"))))
   (let-values (((rxp toks) (parse_S tok-list)))
     (match toks
       [(list Tok_END)    rxp]
