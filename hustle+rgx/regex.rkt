@@ -243,7 +243,7 @@
   (define (num str)
     (let ((number (string->number str)))
       ;; check it is a number
-      (if (and number)
+      (if number
           number
           (error "bad quantifier range value"))))
   ;; helper used in parse_H to convert a character range to a list of valid characters
