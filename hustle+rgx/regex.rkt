@@ -199,7 +199,11 @@
                     ;; both sides bounded
                     [(Tok_Char _)
                       (let-values (((a2 l2) (parse_F n2)))
-                        (values (Range (num a1) (num a2)) l2))]
+                        (let ((low (num a1))
+                              (high (num a2)))
+                          (if (> low high)
+                              (error "invalid range ordering")
+                              (values (Range low high) l2))))]
                     ;; bounded on left side
                     [_ (values (Range (num a1) null) n2)]))]
               ;; exact num instances
