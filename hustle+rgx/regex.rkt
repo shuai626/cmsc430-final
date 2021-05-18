@@ -113,9 +113,7 @@
   (define (lookahead toks)
     (match toks
       ['()    (error "lookahead error")]
-      [(cons x xs) (values x xs)]
-    )
-  )
+      [(cons x xs) (values x xs)]))
   (define (parse_S l)
     (let*-values (((a1 l1) (parse_A l))
                  ((t n)   (lookahead l1)))
@@ -239,7 +237,7 @@
             (match t3
               [(Tok_Char c2) (values (range-list c c2) n3)]
               [_             (error "parse-H error 1")]))]
-        [((Tok_Char c) _)    (values (list (Reg_Char c)) n)]
+        [((Tok_Char c) _)    (values (list c) n)]
         [(_ _) (error "parse-H error 2")])))
   ;; helper used in parse_E to convert to a number for the range
   (define (num str)
@@ -253,7 +251,7 @@
     (define (gen-char x maximum)
       (if (> x maximum)
           '()
-          (cons (Reg_Char (integer->char x)) (gen-char (add1 x) maximum))))
+          (cons (integer->char x) (gen-char (add1 x) maximum))))
     ;; get the codepoints for the range
     (let ((cp1 (char->integer c1))
           (cp2 (char->integer c2)))
