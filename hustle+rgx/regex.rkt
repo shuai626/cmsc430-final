@@ -344,20 +344,75 @@
     [(Plus rxp) (regexp-to-nfa (Concat rxp (Star rxp)))]
     ;; TODO create NFA for a rxp that is given a range of occurrences
     [(Quantifier r rxp)
-      (match r
-        [(Range low high)
-          ;; (Range null null) == {}
-          ;; (Range null int) == {,int}
-          ;; (Range int null) == {int,}
-          ;; (Range int1 int2) | (int1 != int2) == {int1,int2}
-          ;; (Range int1 int2) | (int1 == int2) == {int1}
-        ])]
-    ;; TODO create NFA for a list of valid characters
+      (let ((A (regexp-to-nfa rxp))
+            (s0 (gensym))
+            (s1 (gensym)))
+        (match r
+        ;; (Range null null) == {}
+        [(Range '() '())                              
+          (match A
+            [(NFA asigma astates astart aaccepts adelta) 
+                (NFA asigma
+                (union astates (list s0 s1))
+                s0
+                (list s1)
+                (union adelta (union (list (list s0 null astart) (list s0 null s1) (list s1 null s0)) (unwind-states aaccepts s1)))
+                )])]
+        ;; (Range null int) == {,int}
+        [(Range '() int) #:when(integer? int)                      (range-to-nfa rxp 0 int)]
+        ;; (Range int null) == {int,}
+        [(Range int '()) #:when(integer? int)                               
+          (match (range-to-nfa rxp int int)
+            [(NFA sigma states start accepts delta) 
+              (match A
+                [(NFA asigma astates astart aaccepts adelta)
+                    (NFA (union asigma sigma)
+                      (union astates (union states  (list s0 s1)))
+                      start
+                      (list s1)
+                      (union delta (union adelta (union (unwind-states accepts s0) (union (list (list s0 null astart) (list s0 null s1) (list s1 null s0)) (unwind-states aaccepts s1)))))
+                    )
+                ]
+              )
+            ])]
+        ;; (Range int1 int2) | (int1 != int2) == {int1,int2}
+        [(Range int1 int2)                              (range-to-nfa rxp int1 int2)]
+        ))]
     [(Class rxps)
-      ;; rxps provided as '((Reg_Char x) (Reg_Char y) (Reg_Char z))
-      ;; single start and final state, connect the two on all provided characters
-    ]
+      (let* ((s0 (gensym))
+            (s1 (gensym))
+            (trans (foldl (lambda (c l) (cons (list s0 c s1) l)) '() rxps)))
+             
+        (NFA rxps (list s0 s1) s0 (list s1) trans))]
     ))
+
+(define (range-to-nfa rxp lower upper)
+  (let ((nfa (regexp-to-nfa rxp))
+        (s0 (gensym))
+        (s1 (gensym)))
+    (if (>= 0 upper)
+      (NFA '() (list s0) s0 (list s0) '())
+
+      (let ((prev (range-to-nfa rxp (- lower 1) (- upper 1))))
+        (match nfa
+          [(NFA sigma states start accepts delta)
+            (match prev
+              [(NFA psigma pstates pstart paccepts pdelta)
+                (if (>= 0 lower)
+              
+                (NFA (union sigma psigma)
+                     (union states pstates)
+                     start
+                     (union (list start) (union accepts paccepts))
+                     (union delta (union pdelta (unwind-states accepts pstart)))
+                )
+                
+                (NFA (union sigma psigma)
+                     (union states pstates)
+                     start
+                     paccepts
+                     (union delta (union pdelta (unwind-states accepts pstart))))
+                )])])))))
 
 (define (eq-trans? t v)
   (match* (t v)
