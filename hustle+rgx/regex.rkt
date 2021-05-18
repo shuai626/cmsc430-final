@@ -18,7 +18,6 @@
 ;;            | (Question Regex)
 ;;            | (Plus Regex)
 ;;            | (Quantifier Range Regex)
-;;            | (Class list of Reg_Char)
 
 (struct Empty_String ()           #:prefab)
 (struct Reg_Char     (c)          #:prefab)
@@ -29,8 +28,7 @@
 (struct Question     (rxp)        #:prefab)
 (struct Plus         (rxp)        #:prefab)
 (struct Quantifier   (range rxp)  #:prefab)
-(struct Range        (low high)   #:prefab) ;; use null if either side is undefined (null null == *)
-(struct Class        (l)          #:prefab)
+(struct Range        (low high)   #:prefab)
 
 ;; type Token = (Tok_Char Character)
 ;;            | (Tok_Epsilon)
@@ -149,7 +147,7 @@
         [(Tok_Question) (values (Question a1) n)]
         [(Tok_Plus) (values (Plus a1) n)]
         [(Tok_LCurly)
-          (let-values (((a2 l2) (parse_D n))) ;; send the list without the LCurly
+          (let-values (((a2 l2) (parse_D n)))
             (values (Quantifier a2 a1) l2))]
         [_  (values a1 l1)])))
   (define (parse_C l)
@@ -167,13 +165,14 @@
          (let*-values (((a1 l1) (parse_G n))
                       ((t2 n2) (lookahead l1)))
           (match t2
-            [(Tok_RBrace)   (values (Class a1) n2)]
+            [(Tok_RBrace)   (values (create-union a1) n2)]
             [_              (error "parse-C error 2")]))]
         [_  (error "parse-C error 3")])))
   (define (parse_D l)
     (let-values (((t n) (lookahead l)))
       (match t
-        [(Tok_RCurly) (values (Range null null) n)] ;; range is same as *, represent null null
+        ;; unbounded on either end, same as *
+        [(Tok_RCurly) (values (Range null null) n)]
         [(Tok_Char c)
           (let*-values (((a1 l1) (parse_E l))
                       ((t2 n2)  (lookahead l1)))
@@ -259,6 +258,11 @@
       (if (< cp2 cp1)
           (error "bad character class range")
           (gen-char cp1 cp2))))
+  ;; helper used in parse_C to create a union (or single Reg_Char) for given list of chars
+  (define (create-union l)
+    (match l
+      [(cons (Reg_Char c) '()) (Reg_Char c)]
+      [(cons (Reg_Char c) l)   (Union (Reg_Char c) (create-union l))]))
   (let-values (((rxp toks) (parse_S tok-list)))
     (match toks
       [(list Tok_END)    rxp]
@@ -349,11 +353,6 @@
           ;; (Range int1 int2) | (int1 != int2) == {int1,int2}
           ;; (Range int1 int2) | (int1 == int2) == {int1}
         ])]
-    ;; TODO create NFA for a list of valid characters
-    [(Class rxps)
-      ;; rxps provided as '((Reg_Char x) (Reg_Char y) (Reg_Char z))
-      ;; single start and final state, connect the two on all provided characters
-    ]
     ))
 
 (define (eq-trans? t v)
