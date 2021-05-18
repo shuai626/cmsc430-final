@@ -51,11 +51,10 @@
 ;; Added function to parse regex-match
 (define (parse-regex-match regex str) 
   (cond
-  [(string? str)      (Prim2 'regexp-match? (nfa-to-dfa (regexp-to-nfa (string-to-regexp regex))) (String str))]
-  [(symbol? str)      (Prim2 'regexp-match? (nfa-to-dfa (regexp-to-nfa (string-to-regexp regex))) (Var str))]
+  [(string? str)      (Prim2 'regexp-match? (brzozowski-minimization (nfa-to-dfa (regexp-to-nfa (string-to-regexp regex)))) (String str))]
+  [(symbol? str)      (Prim2 'regexp-match? (brzozowski-minimization (nfa-to-dfa (regexp-to-nfa (string-to-regexp regex)))) (Var str))]
   [else (error "Regex parse error")]
   )
-  
 )
 
 (define op0

@@ -30,4 +30,4 @@ STRETCH
 - <del> Add support for quantifiers + <del>
 - <del> Add support for quantifier {} <del>
 - <del> Add support for character classes: [abc] <del>
-- Add DFA minimization algorithm : Brzozoski's Algorithm
+- <del> Add DFA minimization algorithm : Brzozoski's Algorithm <del>

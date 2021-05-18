@@ -478,3 +478,34 @@
      (let* ((new_start (e-closure nfa (list start)))
             (dfa (DFA sigma (list new_start) new_start '() '())))
         (nfa-to-dfa-step nfa dfa (list new_start)))]))
+
+(define (brzozowski-minimization dfa)
+  (nfa-to-dfa (brzozowski-step  (nfa-to-dfa (brzozowski-step  dfa))))
+)
+
+(define (brzozowski-step dfa)
+   ;; Reverse all edges, make initial state accept state, and accept states inital in NFA 
+  (let ((s0 (gensym)))
+    (match dfa
+      [(DFA sigma states start accepts delta)
+      (let* ((state-to-label (map (lambda (x) (list x (gensym))) states))
+           (new_states (map (lambda (x) (match x [(list state label) label])) state-to-label))
+           (new_start (get-label start state-to-label))
+           (new_accepts  (map (lambda (x) (get-label x state-to-label)) accepts))
+           (new_delta (map (lambda (x)  (match x
+                  [(list start trans end) 
+                    (list (get-label start state-to-label) trans (get-label end state-to-label))])) delta)))
+        (NFA  sigma
+              (union new_states (list s0))
+              s0
+              (list new_start)
+              (map (lambda (x) (reverse x)) (union new_delta (unwind-states new_accepts s0))))
+              )
+      ])))
+
+;; helper function to look-up label mapped to state
+(define (get-label state labels)
+  (foldl (lambda (v l) 
+      (match v
+      [(list s label)
+        (if (equal? s state) label l)])) null labels))
