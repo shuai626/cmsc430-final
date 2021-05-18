@@ -342,7 +342,6 @@
                           (union adelta (union (list (list s0 null astart) (list s0 null s1)) (unwind-states aaccepts s1)))
                           )]))]
     [(Plus rxp) (regexp-to-nfa (Concat rxp (Star rxp)))]
-    ;; TODO create NFA for a rxp that is given a range of occurrences
     [(Quantifier r rxp)
       (let ((A (regexp-to-nfa rxp))
             (s0 (gensym))

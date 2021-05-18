@@ -28,7 +28,6 @@ STRETCH
 - <del> Add substring matching: \.\*<reg-exp>\.\* <del>
 - <del> Add support for anchors: ^ and $ <del>
 - <del> Add support for quantifiers + <del>
-- Add support for quantifier {}
-- Add support for character classes: [abc]
+- <del> Add support for quantifier {} <del>
+- <del> Add support for character classes: [abc] <del>
 - Add DFA minimization algorithm : Brzozoski's Algorithm
-- Add support to return first substring matched
