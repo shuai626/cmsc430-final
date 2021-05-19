@@ -1,6 +1,7 @@
 Our approach to implementing `regexp-match?` and `regexp-match-exact?` was divided into two sections: extending the parser and modifying the compiler. At the parsing level, we created a CFG capable of tokenizing regular expressions. These tokens were next converted into an NFA and finally a minimized DFA. The DFA is minimized by following Brzozowski's algorithm. At compile time, we decided to compile all DFAs in the program as a collection of labels and conditional jumps at the end of the assembly code (taking inspiration from how we compile function definitions in Iniquity). To accomplish this, we created a global variable mapping DFA states to their corresponding labels. Additionally, we added logic to align the stack frame before jumping to the appropriate DFA start state via its effective address. This ensured that subsequent (Ret) calls executed properly. Our initial goal was to add support to the Hustle+ compiler for exact regular expression matching. We found it interesting that we could easily extend this to substring matching by adding “.*” to either end of the original regex.  The Hustle+Rgx compiler originally supported empty strings, literals, unions, starts, concatenations, wildcards, and ? and + quantifiers. In addition to supporting all these, our final iterations adds substring regex matching, anchoring with “^” and “$”, range quantifiers, character classes, and Brzozowski’s algorithm for minimizing the generated DFA.
 
 Our modifications and additions are located in:
-- parse.rkt
-- regex.rkt
-- compile.rkt
+  - ast.rkt
+  - parse.rkt
+  - regex.rkt
+  - compile.rkt

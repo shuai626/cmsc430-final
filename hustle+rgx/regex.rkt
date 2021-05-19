@@ -18,7 +18,7 @@
 ;;            | (Question Regex)
 ;;            | (Plus Regex)
 ;;            | (Quantifier Range Regex)
-;;            | (Class list of Reg_Char)
+;;            | (Class list of char)
 
 (struct Empty_String ()           #:prefab)
 (struct Reg_Char     (c)          #:prefab)
